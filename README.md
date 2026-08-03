@@ -1,73 +1,60 @@
-# React + TypeScript + Vite
+# Rayza Hotel - Sistema de Gestión de Hospedaje (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este repositorio contiene la interfaz de usuario (Frontend) para la aplicación de gestión de hospedajes del hotel. Desarrollado con una interfaz premium, moderna, responsiva, con micro-animaciones y soporte para modo claro/oscuro.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Características Principales
 
-## React Compiler
+* **Dashboard de Habitaciones**: Visualización en tiempo real del estado de cada habitación (Disponible, Ocupada, Limpieza, Mantenimiento) con accesos rápidos.
+* **Control de Caja Chica (Turnos)**: Guardián de ruta que obliga al recepcionista a declarar su saldo inicial y gestionar cobros y egresos únicamente con una sesión de caja abierta.
+* **Flujo de Check-In & Check-Out**: Modales rápidos con cálculo automático de saldos y búsqueda predictiva de huéspedes por DNI/Documento.
+* **Centro de Notificaciones en Tiempo Real (WebSockets)**:
+  * Alertas de finalización de estancia y solicitud de limpieza.
+  * Solicitudes de egresos/retiro de dinero en tiempo real del recepcionista al administrador.
+  * Aprobación/Rechazo de egresos reflejado instantáneamente en el dashboard del recepcionista con sonido sutil de chime.
+* **Módulo de Reportes Visuales**: Gráficos e indicadores de ocupación, balances de ingresos, egresos, y desglose por método de pago (Efectivo, Yape, Plin, Transferencia).
+* **Gestión de Auditoría (Bitácora)**: Acceso restringido para Administradores y Supervisores donde se detallan todas las acciones del personal.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠️ Tecnologías Utilizadas
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+* **Framework Core**: React 18 & Vite
+* **Lenguaje**: TypeScript
+* **Estilizado**: Tailwind CSS v4 & Tailwind Variables
+* **Librería de Iconos**: Lucide React
+* **Comunicación en Tiempo Real**: Socket.IO Client (con soporte ngrok-headers y polling fallback)
+* **Peticiones HTTP**: Axios (con interceptores automáticos para inyección de Token JWT)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## ⚙️ Configuración del Entorno (`.env`)
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Crea un archivo `.env` en la raíz del proyecto para apuntar a la dirección del servidor backend:
+
+```env
+VITE_API_URL=http://localhost:3000/api/v1
+VITE_APP_VERSION=v1.0.0
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📦 Instrucciones de Instalación y Uso
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. **Instalar dependencias**:
+   ```bash
+   npm install
+   ```
+
+2. **Ejecutar en modo desarrollo**:
+   ```bash
+   npm run dev
+   ```
+   *La aplicación abrirá por defecto en `http://localhost:5173`.*
+
+3. **Compilar para producción**:
+   ```bash
+   npm run build
+   ```
+   *Genera los archivos optimizados dentro de la carpeta `/dist` listos para ser servidos.*
