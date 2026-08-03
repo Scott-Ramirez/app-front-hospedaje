@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  /* Fuentes */
+  --font-sans: 'Inter', sans-serif;
+
+  /* Redondeados personalizados */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* --- PALETA DE COLORES (MODO CLARO POR DEFECTO) --- */
+  --color-surface: #f7f9fb;
+  --color-surface-dim: #d8dadc;
+  --color-surface-bright: #f7f9fb;
+  --color-surface-lowest: #ffffff;
+  --color-surface-low: #f2f4f6;
+  --color-surface-container: #eceef0;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e3e5;
+  --color-on-surface: #191c1e;
+  --color-on-surface-variant: #434653;
+  --color-inverse-surface: #2d3133;
+  --color-inverse-on-surface: #eff1f3;
+  --color-outline: #737784;
+  --color-outline-variant: #c3c6d5;
+  
+  /* 🟢 ACTUALIZACIÓN: Verde Esmeralda Corporativo */
+  --color-primary: #006b4d;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #004b36;
+  --color-on-primary-container: #a6f7d3;
+  
+  --color-secondary: #505f76;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #d0e1fb;
+  
+  --color-tertiary: #004b31;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #006544;
+  --color-on-tertiary-container: #58e7ab;
+  
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+
+  --color-background: #f7f9fb;
+  --color-on-background: #191c1e;
+  
+  /* Animaciones personalizadas */
+  --animate-progress: progress 2s ease-in-out infinite;
+
+  @keyframes progress {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(0%); }
+    100% { transform: translateX(100%); }
+  }
+}
+
+/* --- MAPEO PARA MODO OSCURO (ACTIVADO POR LA CLASE 'dark' EN EL HTML) --- */
+.dark {
+  --color-background: #141619;
+  --color-on-background: #e0e3e5;
+  
+  --color-surface: #191c1e;
+  --color-surface-dim: #0f1112;
+  --color-surface-bright: #2d3133;
+  --color-surface-lowest: #0b0d0e;
+  --color-surface-low: #1d2022;
+  --color-surface-container: #232729;
+  --color-surface-container-high: #292d30;
+  --color-surface-container-highest: #34393c;
+  --color-on-surface: #e0e3e5;
+  --color-on-surface-variant: #c3c6d5;
+  
+  /* 🟢 ACTUALIZACIÓN: Verde Esmeralda suavizado para evitar fatiga en pantallas oscuras */
+  --color-primary: #76dcaf;
+  --color-on-primary: #003826;
+  --color-primary-container: #005139;
+  --color-on-primary-container: #93f9cb;
+  
+  --color-outline: #8d919f;
+  --color-outline-variant: #434653;
+}
+
+/* Estilos globales base para cumplir con el ritmo del diseño */
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-background);
+  color: var(--color-on-background);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Ocultar las flechas de incremento (spinners) de los inputs numéricos a nivel global */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
