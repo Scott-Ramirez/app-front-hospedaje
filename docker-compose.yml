@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        - VITE_API_URL=http://localhost:3000/api/v1
+    container_name: hospedaje-frontend
+    restart: always
+    ports:
+      - "80:80"
