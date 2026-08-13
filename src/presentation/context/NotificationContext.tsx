@@ -144,6 +144,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       console.log('📡 Conectado al canal de notificaciones en tiempo real');
     });
 
+    socket.on('notificacion.directa', (data: any) => {
+      const currentUser = usuarioRef.current;
+      if (currentUser) {
+        const esDestinatario = data.destinatarioRol === 'todos' || data.destinatarioRol === currentUser.rol || currentUser.rol === 'admin';
+        if (esDestinatario) {
+          const habitacionTag = data.habitacionNumero ? `Hab. ${data.habitacionNumero}` : 'ALERTA';
+          const nuevaAlerta: AlertaLimpieza = {
+            id: data.id || Math.random().toString(36).substring(2, 9),
+            habitacionNumero: habitacionTag,
+            mensaje: `${data.titulo} (De: ${data.remitenteNombre}) — ${data.mensaje}`,
+            timestamp: data.timestamp || new Date().toISOString(),
+            leido: false,
+          };
+          setNotificaciones((prev) => [nuevaAlerta, ...prev]);
+          playNotificationSound('warning');
+        }
+      }
+    });
+
     socket.on('alerta.limpieza', (data: { habitacionNumero: string; mensaje: string; timestamp: string }) => {
       const nuevaAlerta: AlertaLimpieza = {
         id: Math.random().toString(36).substring(2, 9), 

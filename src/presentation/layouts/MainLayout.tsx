@@ -3,7 +3,6 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useCajaSesion } from '../context/CajaSesionContext';
-import { NotificationBell } from '../components/shared/NotificationBell';
 import { CierreCajaModal } from '../components/shared/CierreCajaModal';
 import { SolicitudEgresoModal } from '../components/recepcion/SolicitudEgresoModal';
 import { SolicitudesEgresoPanel } from '../components/shared/SolicitudesEgresoPanel';
@@ -169,8 +168,6 @@ export const MainLayout = () => {
           >
             {isDarkMode ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
           </button>
-
-          <NotificationBell />
 
           <div className="h-6 w-[1px] bg-outline-variant mx-2" />
 

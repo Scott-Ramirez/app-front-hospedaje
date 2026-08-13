@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { 
   X, BedDouble, CreditCard, 
   Lock, Unlock, Loader2, CheckCircle2, AlertCircle,
-  Clock, Hash, LogOut
+  Clock, Hash, LogOut, Bell
 } from 'lucide-react';
 import { SolesIcon } from './SolesIcon';
 import { estanciasRepository } from '../../../data/repositories/estancias.repository';
 import { pagoRepository } from '../../../data/repositories/pago.repository';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
 import { useCajaSesion } from '../../context/CajaSesionContext';
+import { EnviarNotificacionModal } from './EnviarNotificacionModal';
 
 interface DetalleEstanciaModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   const [listaPagos, setListaPagos] = useState<any[]>([]);
   const [uploadingPagoId, setUploadingPagoId] = useState<string | null>(null);
   const [selectedEvidencia, setSelectedEvidencia] = useState<string | null>(null);
+  const [isNotificarOpen, setIsNotificarOpen] = useState(false);
 
   const formatFecha = (fechaStr: string) => {
     if (!fechaStr) return '---';
@@ -166,6 +168,13 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                 <AlertCircle className="h-3 w-3" /> Deuda acumulada
               </span>
             )}
+            <button
+              onClick={() => setIsNotificarOpen(true)}
+              className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+              title="Enviar Notificación a Admin/Supervisor"
+            >
+              <Bell className="h-4.5 w-4.5" />
+            </button>
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant cursor-pointer transition-colors">
               <X className="h-4.5 w-4.5" />
             </button>
@@ -491,6 +500,14 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
           </div>
         </div>
       )}
+
+      {/* Modal Notificar a Admin/Supervisor */}
+      <EnviarNotificacionModal
+        isOpen={isNotificarOpen}
+        onClose={() => setIsNotificarOpen(false)}
+        habitacionNumero={estancia?.habitacion?.numero}
+        estanciaId={estancia?.id}
+      />
     </div>
   );
 };

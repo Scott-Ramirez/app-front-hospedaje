@@ -1,18 +1,40 @@
 import React, { useState } from 'react';
 import { useNotifications } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
+import { HabitacionesRepository } from '../../data/repositories/habitaciones.repository';
+import { AlertAdapter } from '../../core/adapters/alert.adapter';
 import {
   Trash2,
   CheckCircle2,
   Clock,
   Inbox,
   Check,
-  Filter
+  Filter,
+  KeyRound,
+  Loader2
 } from 'lucide-react';
+
+const habitacionesRepo = new HabitacionesRepository();
 
 export const BandejaNotificaciones: React.FC = () => {
   const { notificaciones, marcarComoLeida, limpiarTodas } = useNotifications();
+  const { usuario } = useAuth();
   const [filtroEstado, setFiltroEstado] = useState<'todos' | 'no-leidos' | 'leidos'>('todos');
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'caja' | 'limpieza' | 'auditoria'>('todos');
+  const [liberandoHab, setLiberandoHab] = useState<string | null>(null);
+
+  const handleLiberarHabitacion = async (numeroHab: string, alertaId: string) => {
+    try {
+      setLiberandoHab(numeroHab);
+      await habitacionesRepo.liberar(numeroHab);
+      AlertAdapter.success('Habitación Liberada', `La habitación N° ${numeroHab} ha sido liberada correctamente y ya está disponible.`);
+      marcarComoLeida(alertaId);
+    } catch (err: any) {
+      AlertAdapter.error('Error al Liberar', err.response?.data?.message || 'No se pudo liberar la habitación.');
+    } finally {
+      setLiberandoHab(null);
+    }
+  };
 
   const formatHoraExacta = (fechaStr: string) => {
     try {
@@ -202,11 +224,35 @@ export const BandejaNotificaciones: React.FC = () => {
                         {alerta.mensaje}
                       </p>
                       
-                      <div className="flex items-center gap-4 mt-2 select-none">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-2 select-none">
                         <div className="flex items-center gap-1 text-[10px] text-on-surface-variant/60 font-semibold">
                           <Clock className="h-3 w-3" />
                           <span>{formatHoraExacta(alerta.timestamp)}</span>
                         </div>
+
+                        {/* Botón de acción para Liberar Habitación si es Admin o Supervisor */}
+                        {(usuario?.rol === 'admin' || usuario?.rol === 'supervisor') && 
+                         alerta.habitacionNumero && 
+                         !['CAJA', 'EGRESO', 'AUDITORÍA', 'SISTEMA'].includes(alerta.habitacionNumero) && (
+                          <button
+                            onClick={() => handleLiberarHabitacion(alerta.habitacionNumero.replace(/\D/g, ''), alerta.id)}
+                            disabled={liberandoHab === alerta.habitacionNumero.replace(/\D/g, '')}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {liberandoHab === alerta.habitacionNumero.replace(/\D/g, '') ? (
+                              <>
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                Liberando...
+                              </>
+                            ) : (
+                              <>
+                                <KeyRound className="h-3.5 w-3.5" />
+                                Liberar Hab. {alerta.habitacionNumero}
+                              </>
+                            )}
+                          </button>
+                        )}
+
                         {!alerta.leido && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide bg-error/15 text-error">
                             Nuevo
