@@ -19,8 +19,10 @@ import {
     Check,
     ChevronLeft,
     ChevronRight,
-    ShieldAlert
+    ShieldAlert,
+    Bell
 } from 'lucide-react';
+import { EnviarNotificacionModal } from '../components/shared/EnviarNotificacionModal';
 
 export const HabitacionesCRUD: React.FC = () => {
     const {
@@ -43,6 +45,7 @@ export const HabitacionesCRUD: React.FC = () => {
 
     // 🌟 EXTRAEMOS EL USUARIO PARA CORRER LAS VALIDACIONES DE ROL
     const { usuario } = useAuth();
+    const [notificarHabitacion, setNotificarHabitacion] = useState<string | null>(null);
 
     // 🌟 VALIDACIÓN DE ACCESOS CRÍTICOS
     const esAdminOSupervisor = usuario?.rol === 'admin' || usuario?.rol === 'supervisor';
@@ -170,9 +173,7 @@ export const HabitacionesCRUD: React.FC = () => {
                                 <th className="py-4 px-5">Infraestructura</th>
                                 <th className="py-4 px-5">Precio Base</th>
                                 <th className="py-4 px-5">Estado Operativo</th>
-                                {!esRecepcionista && (
-                                    <th className="py-4 px-5 text-center">Acciones de Control</th>
-                                )}
+                                <th className="py-4 px-5 text-center">Acciones de Control</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-outline-variant/40 text-sm font-medium">
@@ -224,36 +225,52 @@ export const HabitacionesCRUD: React.FC = () => {
                                                 {room.estado}
                                             </span>
                                         </td>
-                                        {!esRecepcionista && (
                                         <td className="py-3.5 px-5">
                                             <div className="flex items-center justify-center gap-2">
                                                 
-                                                {/* Todo el personal operativo (incluyendo Recepcionista) puede Liberar */}
+                                                {/* Para habitaciones en limpieza: Botón Notificar y Liberar */}
                                                 {room.estado === 'limpieza' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => setNotificarHabitacion(room.numero)}
+                                                            className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
+                                                            title="Notificar a Admin/Supervisor sobre esta habitación"
+                                                        >
+                                                            <Bell className="h-3.5 w-3.5" /> Notificar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleLiberar(room.id!, room.numero)}
+                                                            className="px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
+                                                            title="Liberar e internalizar cuarto a inventario"
+                                                        >
+                                                            <Check className="h-3.5 w-3.5" /> Liberar
+                                                        </button>
+                                                    </>
+                                                )}
+
+                                                {/* Para otras habitaciones: Botón de notificación rápida */}
+                                                {room.estado !== 'limpieza' && (
                                                     <button
-                                                        onClick={() => handleLiberar(room.id!, room.numero)}
-                                                        className="px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
-                                                        title="Liberar e internalizar cuarto a inventario"
+                                                        onClick={() => setNotificarHabitacion(room.numero)}
+                                                        className="p-1.5 border border-primary/20 hover:bg-primary/10 text-primary rounded-md transition-colors cursor-pointer"
+                                                        title="Enviar notificación sobre esta habitación"
                                                     >
-                                                        <Check className="h-3.5 w-3.5" /> Liberar
+                                                        <Bell className="h-3.5 w-3.5" />
                                                     </button>
                                                 )}
 
-                                                {/* 🌟 ACCIÓN MODIFICAR: Deshabilitada visualmente si es Recepcionista */}
-                                                <button
-                                                    onClick={() => esAdminOSupervisor && handleEditarClick(room)}
-                                                    disabled={!esAdminOSupervisor}
-                                                    className={`p-1.5 rounded-md transition-colors ${
-                                                        esAdminOSupervisor 
-                                                            ? 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface cursor-pointer' 
-                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-50'
-                                                    }`}
-                                                    title={esAdminOSupervisor ? "Modificar parámetros" : "Acceso restringido a administradores"}
-                                                >
-                                                    <Edit3 className="h-3.5 w-3.5" />
-                                                </button>
+                                                {/* ACCIÓN MODIFICAR: Solo Admin / Supervisor */}
+                                                {esAdminOSupervisor && (
+                                                    <button
+                                                        onClick={() => handleEditarClick(room)}
+                                                        className="p-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-md transition-colors cursor-pointer"
+                                                        title="Modificar parámetros"
+                                                    >
+                                                        <Edit3 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                )}
 
-                                                {/* 🌟 ACCIÓN ELIMINAR: Ocultada por completo si no es Admin */}
+                                                {/* ACCIÓN ELIMINAR: Solo Admin */}
                                                 {esAdmin && (
                                                     <button
                                                         onClick={() => handleEliminar(room.id!)}
@@ -265,7 +282,6 @@ export const HabitacionesCRUD: React.FC = () => {
                                                 )}
                                             </div>
                                         </td>
-                                        )}
                                     </tr>
                                 ))
                             )}
@@ -410,6 +426,13 @@ export const HabitacionesCRUD: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Modal Notificar a Admin/Supervisor */}
+            <EnviarNotificacionModal
+                isOpen={Boolean(notificarHabitacion)}
+                onClose={() => setNotificarHabitacion(null)}
+                habitacionNumero={notificarHabitacion || undefined}
+            />
         </div>
     );
 };
