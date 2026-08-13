@@ -1,5 +1,6 @@
 import React from 'react';
-import { Users, Coins } from 'lucide-react';
+import { Users, Coins, BarChart3, BookOpen } from 'lucide-react';
+import type { CajaSesionAuditoria } from '../../views/ReportesPanel';
 
 interface RankingHuesped {
   dni: string;
@@ -13,12 +14,15 @@ interface ReportesTablaDetalleProps {
     rankingHuespedes: RankingHuesped[];
     metodosMap: { [metodo: string]: number };
     ingresosTotales: number;
+    totalEstancias: number;
+    ocupacionTipoMap: { [tipo: string]: number };
+    cajaSesionesPeriodo: CajaSesionAuditoria[];
   };
 }
 
 export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ dataFiltrada }) => {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print-leaderboard-grid">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 print-leaderboard-grid">
       
       {/* Húspedes Frecuentes */}
       <div className="lg:col-span-2 bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col print-card">
@@ -117,6 +121,128 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Ocupación por Categoría */}
+      <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
+        <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/60 pb-3">
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="font-bold text-sm text-on-surface">Demanda por Tipo</h3>
+            <p className="text-[10px] text-on-surface-variant">Preferencias de habitaciones del periodo</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 flex-1 flex flex-col justify-around">
+          {Object.keys(dataFiltrada.ocupacionTipoMap).length === 0 ? (
+            <p className="text-center py-6 text-xs text-on-surface-variant/60">Sin registros en este periodo.</p>
+          ) : (
+            Object.entries(dataFiltrada.ocupacionTipoMap).map(([tipo, cant]) => {
+              const total = dataFiltrada.totalEstancias || 1;
+              const pct = Math.round((cant / total) * 100);
+              
+              const tipoEstilos: { [k: string]: { label: string; color: string } } = {
+                simple: { label: 'Simple', color: 'bg-primary' },
+                matrimonial: { label: 'Matrimonial', color: 'bg-indigo-500' },
+                doble: { label: 'Doble', color: 'bg-emerald-500' },
+                triple: { label: 'Triple', color: 'bg-orange-500' },
+              };
+              const info = tipoEstilos[tipo.toLowerCase()] || { label: tipo, color: 'bg-zinc-500' };
+
+              return (
+                <div key={tipo} className="space-y-1 text-xs">
+                  <div className="flex items-center justify-between font-bold text-on-surface-variant">
+                    <span className="capitalize">{info.label}</span>
+                    <span className="font-mono text-on-surface font-black">
+                      {cant} salidas <span className="text-primary ml-1">({pct}%)</span>
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-container h-2.5 rounded-full overflow-hidden">
+                    <div 
+                      className={`${info.color} h-full rounded-full transition-all duration-500`} 
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Bitácora de Auditoría de Cajas */}
+      <div className="lg:col-span-4 bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col print-card mt-2">
+        <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/65 pb-3.5">
+          <BookOpen className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="font-bold text-sm text-on-surface">Auditoría Contable de Caja</h3>
+            <p className="text-[10px] text-on-surface-variant">Historial consolidado de aperturas, cierres y arqueos</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs md:text-sm">
+            <thead>
+              <tr className="border-b border-outline-variant text-[11px] font-bold text-on-surface-variant uppercase tracking-wider select-none">
+                <th className="py-2.5 px-3">Fecha Apertura / Cierre</th>
+                <th className="py-2.5 px-3">Recepcionista</th>
+                <th className="py-2.5 px-3 text-right">Inicial</th>
+                <th className="py-2.5 px-3 text-right">Ingresos</th>
+                <th className="py-2.5 px-3 text-right">Egresos</th>
+                <th className="py-2.5 px-3 text-right">Esperado</th>
+                <th className="py-2.5 px-3 text-right">Entregado</th>
+                <th className="py-2.5 px-3 text-center">Descuadre</th>
+                <th className="py-2.5 px-3 w-40">Observaciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/40 font-medium">
+              {dataFiltrada.cajaSesionesPeriodo.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="text-center py-8 text-on-surface-variant/60">
+                    No se registran sesiones de caja en este periodo.
+                  </td>
+                </tr>
+              ) : (
+                dataFiltrada.cajaSesionesPeriodo.map((sesion) => {
+                  const esperado = Number(sesion.monto_inicial || 0) + Number(sesion.monto_ingresos || 0) - Number(sesion.monto_egresos || 0);
+                  const entregado = sesion.monto_real_entregado ?? esperado;
+                  const descuadre = sesion.descuadre ?? 0;
+                  
+                  return (
+                    <tr key={sesion.id} className="hover:bg-surface-container-low/10 transition-colors">
+                      <td className="py-2.5 px-3 text-on-surface leading-tight font-mono text-[11px]">
+                        <div>A: {new Date(sesion.fecha_apertura).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</div>
+                        {sesion.fecha_cierre && (
+                          <div className="text-on-surface-variant text-[10px]">C: {new Date(sesion.fecha_cierre).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}</div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 font-semibold text-on-surface capitalize">
+                        {sesion.usuario?.nombre || 'Desconocido'}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono">S/. {Number(sesion.monto_inicial || 0).toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right text-emerald-600 font-mono">S/. {Number(sesion.monto_ingresos || 0).toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right text-red-500 font-mono">S/. {Number(sesion.monto_egresos || 0).toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-on-surface font-mono">S/. {esperado.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-mono">
+                        {sesion.fecha_cierre ? `S/. ${entregado.toFixed(2)}` : <span className="text-amber-600 font-bold">Activa</span>}
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-mono">
+                        {descuadre === 0 ? (
+                          <span className="text-emerald-600 font-bold">OK</span>
+                        ) : (
+                          <span className="text-red-500 font-bold">{descuadre > 0 ? `+ S/. ${descuadre.toFixed(2)}` : `- S/. ${Math.abs(descuadre).toFixed(2)}`}</span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-on-surface-variant text-[11px] truncate max-w-40" title={sesion.observaciones || ''}>
+                        {sesion.observaciones || 'Sin observaciones'}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

@@ -16,6 +16,7 @@ import { ReportesTablaDetalle } from '../components/reportes/ReportesTablaDetall
 interface HistorialRegistro {
   id: string;
   habitacionNumero: string;
+  habitacionTipo?: string;
   habitacionPrecioBase: number;
   huespedNombre: string;
   huespedDni: string;
@@ -47,6 +48,22 @@ interface GastoRegistro {
   usuario: string;
 }
 
+export interface CajaSesionAuditoria {
+  id: string;
+  fecha_apertura: string;
+  fecha_cierre?: string;
+  monto_inicial: number;
+  monto_ingresos: number;
+  monto_egresos: number;
+  monto_real_entregado?: number;
+  descuadre?: number;
+  estado: string;
+  observaciones?: string;
+  usuario?: {
+    nombre: string;
+  };
+}
+
 const NOMBRES_MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -65,6 +82,8 @@ export const ReportesPanel: React.FC = () => {
   const [salidas, setSalidas] = useState<HistorialRegistro[]>([]);
   const [pagos, setPagos] = useState<PagoRegistro[]>([]);
   const [gastos, setGastos] = useState<GastoRegistro[]>([]);
+  const [habitaciones, setHabitaciones] = useState<any[]>([]);
+  const [cajaSesiones, setCajaSesiones] = useState<CajaSesionAuditoria[]>([]);
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
@@ -75,15 +94,19 @@ export const ReportesPanel: React.FC = () => {
       else setRefreshing(true);
       setError(null);
 
-      const [resSalidas, resPagos, resGastos] = await Promise.all([
+      const [resSalidas, resPagos, resGastos, resHabitaciones, resCajaHistorial] = await Promise.all([
         api.get<{ data: HistorialRegistro[] }>('/estancias/historial-salidas', { params: { limite: 10000 } }),
         api.get<PagoRegistro[]>('/caja-sesiones/pagos'),
-        api.get<GastoRegistro[]>('/bitacora/gastos')
+        api.get<GastoRegistro[]>('/bitacora/gastos'),
+        api.get<any[]>('/habitaciones'),
+        api.get<{ data: CajaSesionAuditoria[] }>('/caja-sesiones/historial', { params: { limit: 1000 } })
       ]);
 
       setSalidas(resSalidas.data.data || []);
       setPagos(resPagos.data || []);
       setGastos(resGastos.data || []);
+      setHabitaciones(resHabitaciones.data || []);
+      setCajaSesiones(resCajaHistorial.data.data || []);
     } catch (err: any) {
       console.error('Error al cargar datos de reportes:', err);
       setError('No se pudo conectar con el servidor central para generar los reportes analíticos.');
@@ -131,6 +154,13 @@ export const ReportesPanel: React.FC = () => {
 
     const gastosPeriodo = gastos.filter(g => {
       const d = new Date(g.fecha);
+      const matchesYear = d.getFullYear() === selectedYear;
+      const matchesMonth = selectedMonth === 'ALL' || d.getMonth() === parseInt(selectedMonth, 10);
+      return matchesYear && matchesMonth;
+    });
+
+    const cajaSesionesPeriodo = cajaSesiones.filter(cs => {
+      const d = new Date(cs.fecha_apertura);
       const matchesYear = d.getFullYear() === selectedYear;
       const matchesMonth = selectedMonth === 'ALL' || d.getMonth() === parseInt(selectedMonth, 10);
       return matchesYear && matchesMonth;
@@ -252,6 +282,33 @@ export const ReportesPanel: React.FC = () => {
       }
     });
 
+    // ─────────────────────────────────────────────────────────
+    // NUEVAS MÉTRICAS: Porcentaje de Ocupación y Por Categoría
+    // ─────────────────────────────────────────────────────────
+    const totalHabitaciones = habitaciones.length || 1;
+    const mesIndexFormula = selectedMonth === 'ALL' ? 0 : parseInt(selectedMonth, 10);
+    const numDiasFormula = selectedMonth === 'ALL'
+      ? 365
+      : new Date(selectedYear, mesIndexFormula + 1, 0).getDate();
+
+    const getDiasEstancia = (entrada: string, salida: string) => {
+      const d1 = new Date(new Date(entrada).toLocaleString('en-US', { timeZone: 'America/Lima' }));
+      const d2 = new Date(new Date(salida).toLocaleString('en-US', { timeZone: 'America/Lima' }));
+      d1.setHours(0, 0, 0, 0);
+      d2.setHours(0, 0, 0, 0);
+      const diffMs = d2.getTime() - d1.getTime();
+      return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+    };
+
+    const totalNochesOcupadas = checkOutsPeriodo.reduce((sum, s) => sum + getDiasEstancia(s.fechaEntrada, s.fechaSalida), 0);
+    const porcentajeOcupacion = Math.min(100, (totalNochesOcupadas / (numDiasFormula * totalHabitaciones)) * 100);
+
+    const ocupacionTipoMap: { [tipo: string]: number } = {};
+    checkOutsPeriodo.forEach(s => {
+      const tipo = s.habitacionTipo || 'estandar';
+      ocupacionTipoMap[tipo] = (ocupacionTipoMap[tipo] || 0) + 1;
+    });
+
     return {
       totalEstancias,
       ingresosTotales,
@@ -264,9 +321,12 @@ export const ReportesPanel: React.FC = () => {
       promedioIngresoTexto,
       mayorDemandaTexto,
       rankingHuespedes,
-      metodosMap
+      metodosMap,
+      porcentajeOcupacion,
+      ocupacionTipoMap,
+      cajaSesionesPeriodo
     };
-  }, [salidas, pagos, gastos, selectedYear, selectedMonth]);
+  }, [salidas, pagos, gastos, habitaciones, cajaSesiones, selectedYear, selectedMonth]);
 
   const exportToExcel = () => {
     try {
@@ -545,7 +605,9 @@ export const ReportesPanel: React.FC = () => {
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Check-outs Realizados</span>
             <h3 className="text-2xl font-black">{dataFiltrada.totalEstancias} estancias</h3>
-            <p className="text-[9px] text-on-surface-variant font-medium">{dataFiltrada.mayorDemandaTexto}</p>
+            <p className="text-[9px] text-on-surface-variant font-medium">
+              {dataFiltrada.mayorDemandaTexto} · Ocupación: {dataFiltrada.porcentajeOcupacion.toFixed(1)}%
+            </p>
           </div>
         </div>
 
