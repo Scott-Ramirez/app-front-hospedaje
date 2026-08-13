@@ -183,4 +183,11 @@ input[type=number] {
   tr, g, svg {
     page-break-inside: avoid !important;
   }
+
+  /* Forzar visibilidad completa y remover barras de scroll en PDF */
+  .overflow-x-auto, .overflow-y-auto {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
 }

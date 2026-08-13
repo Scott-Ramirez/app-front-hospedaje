@@ -336,6 +336,7 @@ export const ReportesPanel: React.FC = () => {
       html += `<head><meta charset="utf-8"/>`;
       html += `<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Reporte Rayza</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->`;
       html += `<style>`;
+      html += `  @page { size: landscape; margin: 0.5in; mso-page-orientation: landscape; }`;
       html += `  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; }`;
       html += `  .title-header { background-color: #004b36; color: #ffffff; font-size: 16px; font-weight: bold; text-align: center; height: 35px; }`;
       html += `  .meta-cell { font-size: 11px; color: #475569; padding: 4px; }`;
@@ -352,29 +353,97 @@ export const ReportesPanel: React.FC = () => {
       html += `  .table-cell-bold { font-size: 11px; border: 0.5pt solid #cbd5e1; font-weight: bold; padding: 4px; }`;
       html += `</style>`;
       html += `</head><body>`;
-
+ 
       html += `<table>`;
-      html += `  <tr><td colspan="7" class="title-header">HOSPEDAJE RAYZA - REPORTE CONTABLE ANALÍTICO</td></tr>`;
+      html += `  <tr><td colspan="7" class="title-header">HOSPEDAJE RAYZA - REPORTE CONTABLE ANALÍTICO COMPLETO</td></tr>`;
       html += `  <tr><td class="meta-cell">Periodo:</td><td colspan="2" class="meta-value">${periodoStr} de ${selectedYear}</td><td colspan="4"></td></tr>`;
       html += `  <tr><td class="meta-cell">Fecha Exportación:</td><td colspan="2" class="meta-value">${new Date().toLocaleString()}</td><td colspan="4"></td></tr>`;
       html += `  <tr><td colspan="7"></td></tr>`;
-
+ 
       html += `  <tr><td colspan="7" class="section-title">I. INDICADORES CLAVE DE RENDIMIENTO (KPIs)</td></tr>`;
       html += `  <tr>`;
       html += `    <td colspan="2" class="kpi-label">Volumen de Check-outs (Permanencias)</td>`;
-      html += `    <td colspan="2" class="kpi-label">Total Ingresos Recaudados</td>`;
-      html += `    <td colspan="2" class="kpi-label">Egresos Registrados (Gastos/Caja)</td>`;
-      html += `    <td class="kpi-label">Utilidad Comercial Neta</td>`;
+      html += `    <td class="kpi-label">Ocupación Promedio</td>`;
+      html += `    <td class="kpi-label">Total Ingresos Recaudados</td>`;
+      html += `    <td class="kpi-label">Egresos Registrados</td>`;
+      html += `    <td colspan="2" class="kpi-label">Utilidad Comercial Neta</td>`;
       html += `  </tr>`;
       html += `  <tr>`;
       html += `    <td colspan="2" class="kpi-value">${dataFiltrada.totalEstancias} estancias</td>`;
-      html += `    <td colspan="2" class="kpi-value-primary">S/. ${dataFiltrada.ingresosTotales.toFixed(2)}</td>`;
-      html += `    <td colspan="2" class="kpi-value-error">S/. ${dataFiltrada.egresosTotales.toFixed(2)}</td>`;
-      html += `    <td class="kpi-value-primary" style="${dataFiltrada.utilidadNeta < 0 ? 'color: #ba1a1a;' : ''}">S/. ${dataFiltrada.utilidadNeta.toFixed(2)}</td>`;
+      html += `    <td class="kpi-value-primary">${dataFiltrada.porcentajeOcupacion.toFixed(1)}%</td>`;
+      html += `    <td class="kpi-value-primary">S/. ${dataFiltrada.ingresosTotales.toFixed(2)}</td>`;
+      html += `    <td class="kpi-value-error">S/. ${dataFiltrada.egresosTotales.toFixed(2)}</td>`;
+      html += `    <td colspan="2" class="kpi-value-primary" style="${dataFiltrada.utilidadNeta < 0 ? 'color: #ba1a1a;' : ''}">S/. ${dataFiltrada.utilidadNeta.toFixed(2)}</td>`;
       html += `  </tr>`;
       html += `  <tr><td colspan="7"></td></tr>`;
 
-      html += `  <tr><td colspan="7" class="section-title">II. DETALLE DE TRANSACCIONES DE INGRESOS (ABONOS Y PAGOS)</td></tr>`;
+      // SECCIÓN II: RESUMEN DE MÉTODOS DE PAGO Y DEMANDA POR CATEGORÍA
+      html += `  <tr><td colspan="7" class="section-title">II. ANÁLISIS DE MERCADO Y CANALES DE PAGO</td></tr>`;
+      html += `  <tr>`;
+      html += `    <td colspan="3" class="table-header">Preferencias de Tipo de Habitación</td>`;
+      html += `    <td></td>`;
+      html += `    <td colspan="3" class="table-header">Métodos y Canales de Pago (Flujo)</td>`;
+      html += `  </tr>`;
+      
+      const tiposHab = Object.keys(dataFiltrada.ocupacionTipoMap);
+      const metodosPago = Object.keys(dataFiltrada.metodosMap);
+      const maxRowsResumen = Math.max(tiposHab.length, metodosPago.length);
+
+      for (let r = 0; r < maxRowsResumen; r++) {
+        html += `  <tr>`;
+        if (r < tiposHab.length) {
+          const tipo = tiposHab[r];
+          const cant = dataFiltrada.ocupacionTipoMap[tipo];
+          const pct = ((cant / (dataFiltrada.totalEstancias || 1)) * 100).toFixed(0);
+          html += `    <td class="table-cell" style="text-transform: capitalize;">${tipo}</td>`;
+          html += `    <td class="table-cell-center">${cant} salidas</td>`;
+          html += `    <td class="table-cell-right">${pct}%</td>`;
+        } else {
+          html += `    <td class="table-cell"></td><td class="table-cell"></td><td class="table-cell"></td>`;
+        }
+        
+        html += `    <td></td>`; // Celda separadora
+
+        if (r < metodosPago.length) {
+          const metodo = metodosPago[r];
+          const monto = dataFiltrada.metodosMap[metodo];
+          const pct = ((monto / (dataFiltrada.ingresosTotales || 1)) * 100).toFixed(0);
+          html += `    <td class="table-cell" style="text-transform: capitalize;">${metodo}</td>`;
+          html += `    <td class="table-cell-right">S/. ${monto.toFixed(2)}</td>`;
+          html += `    <td class="table-cell-right">${pct}%</td>`;
+        } else {
+          html += `    <td class="table-cell"></td><td class="table-cell"></td><td class="table-cell"></td>`;
+        }
+        html += `  </tr>`;
+      }
+      html += `  <tr><td colspan="7"></td></tr>`;
+
+      // SECCIÓN III: TOP 5 HUÉSPEDES FRECUENTES
+      html += `  <tr><td colspan="7" class="section-title">III. RANKING DE FIDELIZACIÓN - TOP 5 DE HUÉSPEDES</td></tr>`;
+      html += `  <tr>`;
+      html += `    <td class="table-header">Posición</td>`;
+      html += `    <td colspan="2" class="table-header">Nombre Huésped</td>`;
+      html += `    <td class="table-header">DNI / Documento</td>`;
+      html += `    <td class="table-header">N° Estancias</td>`;
+      html += `    <td colspan="2" class="table-header">Monto Total Invertido</td>`;
+      html += `  </tr>`;
+
+      if (dataFiltrada.rankingHuespedes.length === 0) {
+        html += `  <tr><td colspan="7" class="table-cell-center" style="color: #64748b;">Sin huéspedes finalizados en el periodo</td></tr>`;
+      } else {
+        dataFiltrada.rankingHuespedes.forEach((h, idx) => {
+          html += `  <tr>`;
+          html += `    <td class="table-cell-center" style="font-weight: bold;">${idx + 1}</td>`;
+          html += `    <td colspan="2" class="table-cell" style="text-transform: capitalize;">${h.nombre}</td>`;
+          html += `    <td class="table-cell-center font-mono">${h.dni}</td>`;
+          html += `    <td class="table-cell-center">${h.visitas} visitas</td>`;
+          html += `    <td colspan="2" class="table-cell-right" style="font-weight: bold;">S/. ${h.totalGastado.toFixed(2)}</td>`;
+          html += `  </tr>`;
+        });
+      }
+      html += `  <tr><td colspan="7"></td></tr>`;
+ 
+      html += `  <tr><td colspan="7" class="section-title">IV. DETALLE DE TRANSACCIONES DE INGRESOS (ABONOS Y PAGOS)</td></tr>`;
       html += `  <tr>`;
       html += `    <td class="table-header">Fecha y Hora</td>`;
       html += `    <td class="table-header">Concepto</td>`;
@@ -384,28 +453,28 @@ export const ReportesPanel: React.FC = () => {
       html += `    <td class="table-header">Recepcionista</td>`;
       html += `    <td class="table-header">Monto (S/.)</td>`;
       html += `  </tr>`;
-
+ 
       const checkOutsPeriodo = salidas.filter(s => {
         const d = new Date(s.fechaSalida);
         const matchesYear = d.getFullYear() === selectedYear;
         const matchesMonth = selectedMonth === 'ALL' || d.getMonth() === parseInt(selectedMonth, 10);
         return matchesYear && matchesMonth;
       });
-
+ 
       const pagosPeriodo = pagos.filter(p => {
         const d = new Date(p.fecha);
         const matchesYear = d.getFullYear() === selectedYear;
         const matchesMonth = selectedMonth === 'ALL' || d.getMonth() === parseInt(selectedMonth, 10);
         return matchesYear && matchesMonth;
       });
-
+ 
       const gastosPeriodo = gastos.filter(g => {
         const d = new Date(g.fecha);
         const matchesYear = d.getFullYear() === selectedYear;
         const matchesMonth = selectedMonth === 'ALL' || d.getMonth() === parseInt(selectedMonth, 10);
         return matchesYear && matchesMonth;
       });
-
+ 
       if (pagosPeriodo.length === 0) {
         html += `  <tr><td colspan="7" class="table-cell-center" style="color: #64748b;">No hay ingresos registrados en este periodo</td></tr>`;
       } else {
@@ -423,19 +492,18 @@ export const ReportesPanel: React.FC = () => {
         html += `  <tr>`;
         html += `    <td colspan="6" class="table-cell-bold" style="text-align: right; background-color: #f8fafc;">Total Ingresos:</td>`;
         html += `    <td class="table-cell-bold" style="text-align: right; color: #006b4d; background-color: #f8fafc;">S/. ${dataFiltrada.ingresosTotales.toFixed(2)}</td>`;
-        html += `    <td></td>`;
         html += `  </tr>`;
       }
-
+ 
       html += `  <tr><td colspan="7"></td></tr>`;
-      html += `  <tr><td colspan="7" class="section-title">III. DETALLE DE EGRESOS Y RETIROS DE CAJA (GASTOS)</td></tr>`;
+      html += `  <tr><td colspan="7" class="section-title">V. DETALLE DE EGRESOS Y RETIROS DE CAJA (GASTOS)</td></tr>`;
       html += `  <tr>`;
       html += `    <td class="table-header">Fecha y Hora</td>`;
       html += `    <td colspan="2" class="table-header">Concepto del Gasto</td>`;
       html += `    <td colspan="2" class="table-header">Registrado Por</td>`;
       html += `    <td colspan="2" class="table-header">Monto (S/.)</td>`;
       html += `  </tr>`;
-
+ 
       if (gastosPeriodo.length === 0) {
         html += `  <tr><td colspan="7" class="table-cell-center" style="color: #64748b;">No hay egresos registrados en este periodo</td></tr>`;
       } else {
@@ -452,9 +520,9 @@ export const ReportesPanel: React.FC = () => {
         html += `    <td colspan="2" class="table-cell-bold" style="text-align: right; color: #ba1a1a; background-color: #f8fafc;">S/. ${dataFiltrada.egresosTotales.toFixed(2)}</td>`;
         html += `  </tr>`;
       }
-
+ 
       html += `  <tr><td colspan="7"></td></tr>`;
-      html += `  <tr><td colspan="7" class="section-title">IV. REGISTRO HISTÓRICO DE SALIDAS (CHECK-OUTS)</td></tr>`;
+      html += `  <tr><td colspan="7" class="section-title">VI. REGISTRO HISTÓRICO DE SALIDAS (CHECK-OUTS)</td></tr>`;
       html += `  <tr>`;
       html += `    <td class="table-header">Check-In</td>`;
       html += `    <td class="table-header">Check-Out</td>`;
@@ -464,7 +532,7 @@ export const ReportesPanel: React.FC = () => {
       html += `    <td class="table-header">Tarifa Base</td>`;
       html += `    <td class="table-header">Total Cancelado</td>`;
       html += `  </tr>`;
-
+ 
       if (checkOutsPeriodo.length === 0) {
         html += `  <tr><td colspan="7" class="table-cell-center" style="color: #64748b;">No hay salidas históricas registradas en este periodo</td></tr>`;
       } else {
@@ -480,9 +548,9 @@ export const ReportesPanel: React.FC = () => {
           html += `  </tr>`;
         });
       }
-
+ 
       html += `  <tr><td colspan="7"></td></tr>`;
-      html += `  <tr><td colspan="7" class="section-title">V. BITÁCORA DE AUDITORÍA CONTABLE DE CAJA</td></tr>`;
+      html += `  <tr><td colspan="7" class="section-title">VII. BITÁCORA DE AUDITORÍA CONTABLE DE CAJA (SESIONES)</td></tr>`;
       html += `  <tr>`;
       html += `    <td class="table-header">Fecha Apertura</td>`;
       html += `    <td class="table-header">Fecha Cierre</td>`;
