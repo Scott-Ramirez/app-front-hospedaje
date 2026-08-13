@@ -10,14 +10,21 @@ import {
   Scale,
   History,
   Activity,
-  Wallet
+  Wallet,
+  Loader2
 } from 'lucide-react';
 import { HistorialCheckoutsTab } from '../components/historial/HistorialCheckoutsTab';
 import { HistorialBitacoraTab } from '../components/historial/HistorialBitacoraTab';
 import { HistorialCajaTab } from '../components/historial/HistorialCajaTab';
+import { DetalleEstanciaModal } from '../components/shared/DetalleEstanciaModal';
+import { estanciasRepository } from '../../data/repositories/estancias.repository';
+import { pagoRepository } from '../../data/repositories/pago.repository';
 
 export const HistorialSalidas: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'salidas' | 'bitacora' | 'caja'>('salidas');
+  const [selectedEstancia, setSelectedEstancia] = useState<any | null>(null);
+  const [loadingSelectedEstancia, setLoadingSelectedEstancia] = useState(false);
+  const [selectedEvidencia, setSelectedEvidencia] = useState<string | null>(null);
   
   const {
     registros,
@@ -41,6 +48,18 @@ export const HistorialSalidas: React.FC = () => {
   } = useBitacora();
 
   const { usuario } = useAuth();
+
+  const handleSelectEstancia = async (id: string) => {
+    try {
+      setLoadingSelectedEstancia(true);
+      const res = await estanciasRepository.obtenerPorId(id);
+      setSelectedEstancia(res);
+    } catch (err) {
+      console.error('Error al cargar detalles de la estancia:', err);
+    } finally {
+      setLoadingSelectedEstancia(false);
+    }
+  };
 
   const [filtroBitacora, setFiltroBitacora] = useState('');
   const [filtroCaja, setFiltroCaja] = useState('');
@@ -101,6 +120,8 @@ export const HistorialSalidas: React.FC = () => {
         concepto: p.concepto || 'Abono / Pago de estancia',
         monto: Number(p.monto),
         signo: '+' as const,
+        evidenciaUrl: p.evidenciaUrl,
+        metodoPago: p.metodoPago,
       }));
       total = totalIngresos;
     } else if (modalDetalle === 'egresos') {
@@ -114,6 +135,8 @@ export const HistorialSalidas: React.FC = () => {
         concepto: g.concepto,
         monto: Number(g.monto),
         signo: '−' as const,
+        evidenciaUrl: undefined,
+        metodoPago: undefined,
       }));
       total = totalGastos;
     } else {
@@ -128,6 +151,8 @@ export const HistorialSalidas: React.FC = () => {
           concepto: p.concepto || 'Abono / Pago de estancia',
           monto: Number(p.monto),
           signo: '+' as const,
+          evidenciaUrl: p.evidenciaUrl,
+          metodoPago: p.metodoPago,
         })),
         ...gastos.map(g => ({
           id: `e-${g.id}`,
@@ -190,17 +215,33 @@ export const HistorialSalidas: React.FC = () => {
               <div className="text-center py-10 text-on-surface-variant/60 text-sm">No hay movimientos.</div>
             ) : (
               <div className="divide-y divide-outline-variant/30">
-                {itemsFiltrados.map((item) => (
-                  <div key={item.id} className={`flex items-center justify-between px-5 py-3 transition-colors ${item.signo === '+' ? 'hover:bg-emerald-500/5' : 'hover:bg-red-500/5'}`}>
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <span className="text-xs font-bold text-on-surface truncate">{item.etiqueta}</span>
-                      <span className="text-[10px] text-on-surface-variant font-medium truncate mt-0.5">{item.concepto}</span>
+                {itemsFiltrados.map((item: any) => {
+                  const isDigital = ['yape', 'plin', 'transferencia', 'tarjeta'].includes(item.metodoPago?.toLowerCase() || '');
+                  return (
+                    <div key={item.id} className={`flex items-center justify-between px-5 py-3 transition-colors ${item.signo === '+' ? 'hover:bg-emerald-500/5' : 'hover:bg-red-500/5'}`}>
+                      <div className="flex flex-col min-w-0 flex-1 text-left">
+                        <span className="text-xs font-bold text-on-surface truncate">{item.etiqueta}</span>
+                        <span className="text-[10px] text-on-surface-variant font-medium truncate mt-0.5">
+                          {item.concepto} {item.metodoPago && <span className="capitalize font-bold text-primary">({item.metodoPago})</span>}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 ml-4 shrink-0">
+                        {isDigital && item.evidenciaUrl && (
+                          <button
+                            onClick={() => setSelectedEvidencia(pagoRepository.getEvidenciaUrl(item.evidenciaUrl))}
+                            className="px-2 py-0.5 text-[9px] font-extrabold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md cursor-pointer transition-colors"
+                            type="button"
+                          >
+                            👁️ Ver Pago
+                          </button>
+                        )}
+                        <span className={`text-sm font-black tabular-nums ${item.signo === '+' ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {item.signo} S/. {item.monto.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`text-sm font-black tabular-nums ml-4 shrink-0 ${item.signo === '+' ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {item.signo} S/. {item.monto.toFixed(2)}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -293,6 +334,7 @@ export const HistorialSalidas: React.FC = () => {
           formatFechas={formatFechas}
           obtenerIniciales={obtenerIniciales}
           isSearching={isSearching}
+          onSelectEstancia={handleSelectEstancia}
         />
       )}
 
@@ -350,6 +392,69 @@ export const HistorialSalidas: React.FC = () => {
 
       {/* Modal Desglose */}
       {renderModalDetalle()}
+
+      {/* Cargando Detalles Estancia */}
+      {loadingSelectedEstancia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs select-none">
+          <div className="bg-surface p-4 rounded-xl flex items-center gap-2.5 shadow-lg border border-outline-variant/40 text-xs font-bold text-on-surface">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span>Cargando detalles de estancia...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Detalle Estancia modal */}
+      {selectedEstancia && (
+        <DetalleEstanciaModal
+          isOpen={!!selectedEstancia}
+          onClose={() => setSelectedEstancia(null)}
+          estancia={selectedEstancia}
+          onCheckOut={() => {}}
+          onRefreshList={() => {}}
+        />
+      )}
+
+      {/* Visor de Evidencia */}
+      {selectedEvidencia && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-zinc-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
+          <div className="bg-surface border border-outline-variant/60 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="px-5 py-3.5 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+              <p className="text-xs font-bold text-on-surface uppercase tracking-wider">Comprobante de Pago Digital</p>
+              <button
+                onClick={() => setSelectedEvidencia(null)}
+                className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container cursor-pointer transition-colors"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 flex-1 overflow-y-auto flex items-center justify-center bg-zinc-900">
+              {selectedEvidencia.toLowerCase().endsWith('.pdf') ? (
+                <iframe
+                  src={selectedEvidencia}
+                  title="Comprobante PDF"
+                  className="w-full h-[50vh] border-0 rounded-lg"
+                />
+              ) : (
+                <img
+                  src={selectedEvidencia}
+                  alt="Comprobante"
+                  className="max-w-full max-h-[55vh] object-contain rounded-lg shadow"
+                />
+              )}
+            </div>
+            <div className="px-5 py-3 border-t border-outline-variant bg-surface-container-lowest flex justify-end">
+              <button
+                onClick={() => setSelectedEvidencia(null)}
+                className="px-4 py-2 text-xs font-bold bg-primary text-on-primary rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                type="button"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

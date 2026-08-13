@@ -93,6 +93,11 @@ export const estanciasRepository = {
     return response.data;
   },
 
+  async obtenerPorId(id: string): Promise<EstanciaResponse> {
+    const response = await api.get<EstanciaResponse>(`/estancias/${id}`);
+    return response.data;
+  },
+
   /**
    * Registra un pago de abono para liquidar la deuda de una estancia.
    */

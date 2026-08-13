@@ -401,8 +401,12 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
         {/* ── FOOTER ─────────────────────────────────────────────── */}
         <div className="px-5 py-3.5 border-t border-outline-variant flex items-center justify-between gap-3 bg-surface-container-lowest">
-          <div className="flex items-center gap-1.5 text-[10px] font-semibold">
-            {!alDiaParaCheckOut ? (
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-left">
+            {estancia.estado === 'finalizado' ? (
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wider">
+                ✓ Estancia Finalizada
+              </span>
+            ) : !alDiaParaCheckOut ? (
               <span className="flex items-center gap-1 text-red-500">
                 <Lock className="h-3 w-3" /> Check-out bloqueado por deuda acumulada
               </span>
@@ -420,15 +424,17 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
             >
               Cerrar
             </button>
-            <button
-              onClick={handleActionCheckout}
-              disabled={!alDiaParaCheckOut}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-error text-on-error rounded-lg hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-              title={!alDiaParaCheckOut ? 'Cobre la deuda transcurrida primero' : 'Finalizar estancia'}
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              Check-Out
-            </button>
+            {estancia.estado !== 'finalizado' && (
+              <button
+                onClick={handleActionCheckout}
+                disabled={!alDiaParaCheckOut}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-error text-on-error rounded-lg hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                title={!alDiaParaCheckOut ? 'Cobre la deuda transcurrida primero' : 'Finalizar estancia'}
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Check-Out
+              </button>
+            )}
           </div>
         </div>
 

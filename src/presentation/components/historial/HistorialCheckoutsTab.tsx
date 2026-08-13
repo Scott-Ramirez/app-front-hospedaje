@@ -23,6 +23,7 @@ interface HistorialCheckoutsTabProps {
   formatFechas: (f: string) => string;
   obtenerIniciales: (n: string) => string;
   isSearching: boolean;
+  onSelectEstancia?: (id: string) => void;
 }
 
 export const HistorialCheckoutsTab: React.FC<HistorialCheckoutsTabProps> = ({
@@ -38,6 +39,7 @@ export const HistorialCheckoutsTab: React.FC<HistorialCheckoutsTabProps> = ({
   formatFechas,
   obtenerIniciales,
   isSearching,
+  onSelectEstancia,
 }) => {
   return (
     <>
@@ -127,7 +129,11 @@ export const HistorialCheckoutsTab: React.FC<HistorialCheckoutsTabProps> = ({
                   const f1Str = formatFechas(item.fechaEntrada);
                   const f2Str = formatFechas(item.fechaSalida);
                   return (
-                    <tr key={item.id} className="hover:bg-surface-container-low/15 transition-colors group">
+                    <tr 
+                      key={item.id} 
+                      onClick={() => onSelectEstancia?.(item.id)}
+                      className="hover:bg-surface-container-low/15 transition-colors group cursor-pointer"
+                    >
                       <td className="py-3.5 px-6 text-center font-bold text-xs text-on-surface-variant/60 bg-surface-container-low/20 group-hover:bg-transparent transition-colors">
                         {((paginaActual - 1) * 10) + idx + 1}
                       </td>
