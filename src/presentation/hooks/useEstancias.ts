@@ -16,24 +16,33 @@ export const useEstancias = (estadoInicial?: string) => {
   const [filtroEstado, setFiltroEstado] = useState<string | undefined>(estadoInicial);
 
   // Carga reactiva de estancias de la API
-  const cargarEstancias = useCallback(async () => {
-    setLoading(true);
+  const cargarEstancias = useCallback(async (silencioso = false) => {
+    if (!silencioso) setLoading(true);
     try {
       const resultado = await estanciasRepository.listar(filtroEstado, paginaActual);
       setEstancias(resultado.data);
       setTotalItems(resultado.total);
     } catch (error: any) {
       console.error('Error cargando estancias:', error);
-      // 🌟 Corrección 2: Cambiado a AlertAdapter
-      AlertAdapter.error('No se pudo obtener el listado de estancias activas');
+      if (!silencioso) {
+        AlertAdapter.error('No se pudo obtener el listado de estancias activas');
+      }
     } finally {
-      setLoading(false);
+      if (!silencioso) setLoading(false);
     }
   }, [filtroEstado, paginaActual]);
 
   // Ejecutar recarga al cambiar filtros o página
   useEffect(() => {
     cargarEstancias();
+  }, [cargarEstancias]);
+
+  // Auto-refresco de la lista de estancias activas cada 30 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      cargarEstancias(true);
+    }, 30000);
+    return () => clearInterval(interval);
   }, [cargarEstancias]);
 
   /**

@@ -21,6 +21,75 @@ interface NotificationContextProps {
 
 const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);
 
+// 🔊 Sintetizador de audio local e inmediato mediante Web Audio API
+const playNotificationSound = (type: 'info' | 'warning' | 'error' = 'info') => {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    const now = audioCtx.currentTime;
+
+    if (type === 'error') {
+      // Tono crítico (descuadres graves): dos tonos graves tipo bocina de alarma
+      const playBeep = (time: number, freq: number) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'triangle';
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.35);
+        osc.start(time);
+        osc.stop(time + 0.35);
+      };
+      playBeep(now, 380);
+      playBeep(now + 0.2, 300);
+    } else if (type === 'warning') {
+      // Advertencia (egresos/alertas de recepción): tono medio de llamada doble
+      const playBeep = (time: number, freq: number) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.25, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.25);
+        osc.start(time);
+        osc.stop(time + 0.25);
+      };
+      playBeep(now, 520);
+      playBeep(now + 0.12, 520);
+    } else {
+      // Informativo / Limpieza / Conciliación: Tono Ding-Dong premium ascendente
+      const osc1 = audioCtx.createOscillator();
+      const gain1 = audioCtx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(audioCtx.destination);
+      osc1.frequency.setValueAtTime(783.99, now); // G5
+      osc1.type = 'sine';
+      gain1.gain.setValueAtTime(0.2, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
+      
+      const osc2 = audioCtx.createOscillator();
+      const gain2 = audioCtx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(audioCtx.destination);
+      osc2.frequency.setValueAtTime(1046.50, now + 0.08); // C6 (Ding-dong rápido)
+      osc2.type = 'sine';
+      gain2.gain.setValueAtTime(0.2, now + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+      osc2.start(now + 0.08);
+      osc2.stop(now + 0.45);
+    }
+  } catch (e) {
+    console.warn('AudioContext bloqueado o no soportado:', e);
+  }
+};
+
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { usuario } = useAuth();
   const { verificarCaja } = useCajaSesion();
@@ -31,7 +100,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     usuarioRef.current = usuario;
   }, [usuario]);
 
-  // Cargar notificaciones del localStorage del usuario al montar o cambiar usuario
   useEffect(() => {
     if (usuario) {
       const storageKey = `alertas_notificaciones_${usuario.id}`;
@@ -50,7 +118,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, [usuario]);
 
-  // Guardar notificaciones en localStorage al cambiar
   useEffect(() => {
     if (usuario) {
       const storageKey = `alertas_notificaciones_${usuario.id}`;
@@ -66,9 +133,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   useEffect(() => {
     const wsUrl = getWebSocketUrl();
     
-    // 🌟 CORRECCIÓN CRÍTICA: extraHeaders solo funciona si dejas que HTTP haga el handshake inicial.
-    // Si fuerzas ['websocket'] de golpe, el navegador usa la API nativa de WebSocket y ignora los extraHeaders.
-    // Al usar ['polling', 'websocket'], ngrok recibe la cabecera en el primer HTTP request y luego muta a WebSocket.
     const socket: Socket = io(`${wsUrl}/notificaciones`, {
       transports: ['polling', 'websocket'], 
       extraHeaders: {
@@ -90,21 +154,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       };
 
       setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-
-      // Reproducir sonido sutil de recepción
-      try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-        audio.volume = 0.4;
-        audio.play();
-      } catch (e) {
-        console.log('Sonido bloqueado por políticas de interacción del navegador.');
-      }
+      playNotificationSound('info');
     });
 
     socket.on('alerta.recepcionista', (data: { tipo: string; usuario: string; descripcion: string; timestamp: string }) => {
       const currentUser = usuarioRef.current;
       if (currentUser) {
-        // Alerta en tiempo real para Administradores y Supervisores
         if (currentUser.rol === 'admin' || currentUser.rol === 'supervisor') {
           const nuevaAlerta: AlertaLimpieza = {
             id: Math.random().toString(36).substring(2, 9), 
@@ -115,19 +170,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           };
 
           setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-
-          try {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-            audio.volume = 0.5;
-            audio.play();
-          } catch (e) {
-            console.log('Sonido bloqueado.');
-          }
+          playNotificationSound('warning');
         }
       }
     });
 
-    // 💸 Solicitudes de egreso de recepcionistas → notifica a admin y supervisor
     socket.on('solicitud.egreso.nueva', (data: { recepcionista: string; monto: number; concepto: string; timestamp: string }) => {
       const currentUser = usuarioRef.current;
       if (currentUser) {
@@ -140,16 +187,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             leido: false,
           };
           setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-          try {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-            audio.volume = 0.6;
-            audio.play();
-          } catch { /* bloqueado por política del navegador */ }
+          playNotificationSound('info');
         }
       }
     });
 
-    // 📣 El recepcionista recibe pre-aprobación de su solicitud (Paso 1)
     socket.on('solicitud.egreso.pre_aprobada', (data: { id: string; recepcionistaId: number; aprobadoPor: string; monto: number; concepto: string; timestamp: string }) => {
       console.log('📣 WebSocket recibido: solicitud.egreso.pre_aprobada', data);
       const currentUser = usuarioRef.current;
@@ -162,15 +204,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           leido: false,
         };
         setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-        try {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-          audio.volume = 0.5;
-          audio.play();
-        } catch {}
+        playNotificationSound('info');
       }
     });
 
-    // 📣 El recepcionista recibe confirmación de liquidación (Paso 2) o rechazo
     socket.on('solicitud.egreso.resuelta', (data: { estado: string; recepcionistaId: number; aprobadoPor?: string; rechazadoPor?: string; monto?: number; montoReal?: number; concepto: string; timestamp: string }) => {
       console.log('📣 WebSocket recibido: solicitud.egreso.resuelta', data);
       const currentUser = usuarioRef.current;
@@ -200,17 +237,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           };
           
           setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-          
-          try {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-            audio.volume = 0.5;
-            audio.play();
-          } catch {}
+          playNotificationSound('info');
         }
       }
     });
 
-    // 💰 Notificación de descuadre de caja al cerrar turno
     socket.on('caja.descuadre_cierre', (data: { usuario: string; montoEsperado: number; montoReal: number; descuadre: number; observaciones: string; timestamp: string }) => {
       const currentUser = usuarioRef.current;
       if (currentUser && (currentUser.rol === 'admin' || currentUser.rol === 'supervisor')) {
@@ -222,15 +253,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           leido: false,
         };
         setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-        try {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-          audio.volume = 0.6;
-          audio.play();
-        } catch {}
+        playNotificationSound('error');
       }
     });
 
-    // 💰 Notificación de discrepancia en traspaso de caja al abrir turno
     socket.on('caja.descuadre_traspaso', (data: { usuario: string; montoDeclarado: number; montoAnterior: number; diferencia: number; timestamp: string }) => {
       const currentUser = usuarioRef.current;
       if (currentUser && (currentUser.rol === 'admin' || currentUser.rol === 'supervisor')) {
@@ -242,15 +268,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           leido: false,
         };
         setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-        try {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-          audio.volume = 0.5;
-          audio.play();
-        } catch {}
+        playNotificationSound('error');
       }
     });
 
-    // 📣 Notificación al recepcionista y administradores de que una caja fue conciliada
     socket.on('caja.conciliada', (data: { id: string; recepcionistaId: number; recepcionistaNombre?: string; conciliadoPor: string; descuadre: number; notas: string; fechaCierre: string; timestamp: string }) => {
       const currentUser = usuarioRef.current;
       if (!currentUser) return;
@@ -276,11 +297,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           leido: false,
         };
         setNotificaciones((prev) => [nuevaAlerta, ...prev]);
-        try {
-          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-600.wav');
-          audio.volume = 0.5;
-          audio.play();
-        } catch {}
+        playNotificationSound('info');
       }
     });
 

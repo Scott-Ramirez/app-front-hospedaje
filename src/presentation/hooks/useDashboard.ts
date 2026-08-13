@@ -35,9 +35,9 @@ export const useDashboard = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    const cargarDashboard = async () => {
+    const cargarDashboard = async (silencioso = false) => {
         try {
-            setLoading(true);
+            if (!silencioso) setLoading(true);
             setError(null);
             
             const [dashboardRes, estanciasRes] = await Promise.all([
@@ -53,10 +53,7 @@ export const useDashboard = () => {
                 const precio = Number(e.habitacion?.precio || 0);
                 const montoAcum = Number(e.montoAcumulado ?? 0);
                 const pagado = Number(e.total_pagar || 0);
-                // Calcular deuda pendiente igual que el backend: max(0, acum - pagado)
                 const montoPendiente = Math.max(0, montoAcum - pagado);
-                // Confiar en el backend para estaVencida — ya calcula correctamente
-                // si el huésped está al día (pagó sus días programados → false)
                 const estaVencida = Boolean(e.estaVencida) && montoPendiente > 0;
                 return {
                     estanciaId: e.id,
@@ -85,7 +82,6 @@ export const useDashboard = () => {
                 }
             });
         } catch (err: any) {
-            // Mapeo semántico de errores según principios de Clean Code
             const errorMessage = err?.message || '';
             const status = err?.response?.status;
 
@@ -99,12 +95,19 @@ export const useDashboard = () => {
                 setError('El sistema encontró un inconveniente al procesar y calcular los datos de las habitaciones.');
             }
         } finally {
-            setLoading(false);
+            if (!silencioso) setLoading(false);
         }
     };
 
     useEffect(() => {
         cargarDashboard();
+
+        // Sincronización automática silenciosa cada 30 segundos
+        const interval = setInterval(() => {
+            cargarDashboard(true);
+        }, 30000);
+
+        return () => clearInterval(interval);
     }, []);
 
     // Cálculo matemático en caliente de tasa de ocupación

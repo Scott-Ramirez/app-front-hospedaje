@@ -55,16 +55,31 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
   if (!isOpen || !estancia) return null;
 
-  const totalCalculado = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
-  const deudaReal = Math.max(0, totalCalculado - totalPagos);
-  const porcentajePagado = totalCalculado > 0 ? Math.min(100, (totalPagos / totalCalculado) * 100) : 100;
-  const alDia = deudaReal === 0;
+  const totalProgramado = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
+  const deudaProgramada = Math.max(0, totalProgramado - totalPagos);
+  const porcentajePagado = totalProgramado > 0 ? Math.min(100, (totalPagos / totalProgramado) * 100) : 100;
+
+  // Simular check-out para el día de hoy
+  const getDiasSiCheckOutHoy = () => {
+    if (!estancia?.fecha_entrada) return 1;
+    const d1 = new Date(new Date(estancia.fecha_entrada).toLocaleString('en-US', { timeZone: 'America/Lima' }));
+    const d2 = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
+    d1.setHours(0, 0, 0, 0);
+    d2.setHours(0, 0, 0, 0);
+    const diffMs = d2.getTime() - d1.getTime();
+    return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  };
+
+  const diasRealesHoy = getDiasSiCheckOutHoy();
+  const totalRealesHoy = diasRealesHoy * Number(estancia.habitacion?.precio || 0);
+  const deudaRealHoy = Math.max(0, totalRealesHoy - totalPagos);
+  const alDiaParaCheckOut = deudaRealHoy === 0;
 
   const handlePagarSaldo = async (e: React.FormEvent) => {
     e.preventDefault();
     const monto = Number(montoPago);
     if (isNaN(monto) || monto <= 0) { AlertAdapter.error('Monto Inválido', 'Ingrese un monto mayor a 0 soles.'); return; }
-    if (monto > deudaReal) { AlertAdapter.error('Monto Excedido', 'El abono no puede superar la deuda pendiente.'); return; }
+    if (monto > deudaProgramada) { AlertAdapter.error('Monto Excedido', 'El abono no puede superar la deuda pendiente.'); return; }
     if (!metodoPago) { AlertAdapter.error('Falta Información', 'Seleccione un método de pago.'); return; }
     try {
       setSubmittingPago(true);
@@ -92,10 +107,10 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       <div className="bg-surface text-on-surface w-full max-w-lg rounded-2xl shadow-2xl border border-outline-variant overflow-hidden flex flex-col max-h-[90vh]">
 
         {/* ── HEADER ─────────────────────────────────────────────── */}
-        <div className={`px-6 pt-5 pb-4 border-b border-outline-variant flex items-start justify-between gap-4 ${alDia ? 'bg-emerald-500/5' : 'bg-red-500/5'}`}>
+        <div className={`px-6 pt-5 pb-4 border-b border-outline-variant flex items-start justify-between gap-4 ${alDiaParaCheckOut ? 'bg-emerald-500/5' : 'bg-red-500/5'}`}>
           <div className="flex items-center gap-3">
             {/* Avatar habitación */}
-            <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 font-black text-lg ${alDia ? 'bg-emerald-500/15 text-emerald-600' : 'bg-red-500/15 text-red-500'}`}>
+            <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 font-black text-lg ${alDiaParaCheckOut ? 'bg-emerald-500/15 text-emerald-600' : 'bg-red-500/15 text-red-500'}`}>
               {estancia.habitacion?.numero || '?'}
             </div>
             <div>
@@ -111,13 +126,13 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
           <div className="flex items-center gap-2 shrink-0">
             {/* Badge estado */}
-            {alDia ? (
+            {alDiaParaCheckOut ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                <CheckCircle2 className="h-3 w-3" /> Al día
+                <CheckCircle2 className="h-3 w-3" /> Habilitado Check-out
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-full">
-                <AlertCircle className="h-3 w-3" /> Deuda activa
+                <AlertCircle className="h-3 w-3" /> Deuda acumulada
               </span>
             )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant cursor-pointer transition-colors">
@@ -182,46 +197,62 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
               </div>
             ) : (
               <div className="p-4 space-y-3">
-                {/* Tres métricas */}
+                {/* Tres métricas de la estancia programada */}
                 <div className="grid grid-cols-3 gap-2.5 text-center">
                   <div className="bg-surface rounded-lg p-2.5 border border-outline-variant/40">
-                    <p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-wide mb-1">Total</p>
-                    <p className="text-sm font-black text-on-surface">S/. {totalCalculado.toFixed(2)}</p>
+                    <p className="text-[9px] text-on-surface-variant font-semibold uppercase tracking-wide mb-1">Total Prog.</p>
+                    <p className="text-sm font-black text-on-surface">S/. {totalProgramado.toFixed(2)}</p>
                   </div>
                   <div className="bg-emerald-500/8 rounded-lg p-2.5 border border-emerald-500/20">
                     <p className="text-[9px] text-emerald-600 font-semibold uppercase tracking-wide mb-1">Pagado</p>
                     <p className="text-sm font-black text-emerald-600 dark:text-emerald-400">S/. {totalPagos.toFixed(2)}</p>
                   </div>
-                  <div className={`rounded-lg p-2.5 border ${deudaReal > 0 ? 'bg-red-500/8 border-red-500/20' : 'bg-emerald-500/8 border-emerald-500/20'}`}>
-                    <p className={`text-[9px] font-semibold uppercase tracking-wide mb-1 ${deudaReal > 0 ? 'text-red-500' : 'text-emerald-600'}`}>Saldo</p>
-                    <p className={`text-sm font-black ${deudaReal > 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>S/. {deudaReal.toFixed(2)}</p>
+                  <div className={`rounded-lg p-2.5 border ${deudaProgramada > 0 ? 'bg-amber-500/8 border-amber-500/20' : 'bg-emerald-500/8 border-emerald-500/20'}`}>
+                    <p className={`text-[9px] font-semibold uppercase tracking-wide mb-1 ${deudaProgramada > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>Saldo Prog.</p>
+                    <p className={`text-sm font-black ${deudaProgramada > 0 ? 'text-amber-600' : 'text-emerald-600 dark:text-emerald-400'}`}>S/. {deudaProgramada.toFixed(2)}</p>
                   </div>
                 </div>
 
                 {/* Barra de progreso */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-[10px] text-on-surface-variant font-medium">
-                    <span>Progreso de pago</span>
+                    <span>Progreso de pago programado</span>
                     <span>{porcentajePagado.toFixed(0)}%</span>
                   </div>
                   <div className="h-2 bg-surface rounded-full overflow-hidden border border-outline-variant/30">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${alDia ? 'bg-emerald-500' : 'bg-primary'}`}
+                      className={`h-full rounded-full transition-all duration-500 ${deudaProgramada === 0 ? 'bg-emerald-500' : 'bg-primary'}`}
                       style={{ width: `${porcentajePagado}%` }}
                     />
                   </div>
                 </div>
 
+                {/* Simulación check-out temprano */}
+                {totalProgramado > totalRealesHoy && (
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-xs space-y-1 text-on-surface-variant">
+                    <div className="flex items-center gap-1.5 font-bold text-primary">
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Check-Out Temprano (Simulación)</span>
+                    </div>
+                    <p>
+                      Si realiza la salida hoy, la estancia se ajustará a <strong>{diasRealesHoy} día(s)</strong> (Costo: S/. {totalRealesHoy.toFixed(2)}).
+                    </p>
+                    <p className="font-semibold">
+                      Monto ya pagado: S/. {totalPagos.toFixed(2)} · Saldo final de salida: <span className={deudaRealHoy > 0 ? 'text-red-500 font-bold' : 'text-emerald-600 font-bold'}>S/. {deudaRealHoy.toFixed(2)}</span>
+                    </p>
+                  </div>
+                )}
+
                 {/* Banner estado */}
-                {alDia ? (
+                {alDiaParaCheckOut ? (
                   <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3.5 py-2.5 text-xs text-emerald-700 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    <span><strong>¡Cuenta saldada!</strong> El huésped está habilitado para check-out.</span>
+                    <span><strong>¡Habilitado para check-out!</strong> El huésped está al día con los días transcurridos hasta hoy.</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2.5 bg-red-500/8 border border-red-500/20 rounded-lg px-3.5 py-2.5 text-xs text-red-600 dark:text-red-400">
                     <AlertCircle className="h-4 w-4 shrink-0" />
-                    <span><strong>Deuda pendiente:</strong> Registrar cobro de <strong>S/. {deudaReal.toFixed(2)}</strong> antes del check-out.</span>
+                    <span><strong>Deuda para salida:</strong> Se debe cobrar <strong>S/. {deudaRealHoy.toFixed(2)}</strong> (de los días transcurridos reales) antes del check-out.</span>
                   </div>
                 )}
               </div>
@@ -229,7 +260,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
           </div>
 
           {/* ── Formulario de pago ─────────────────────────────── */}
-          {!loadingDeuda && deudaReal > 0 && (
+          {!loadingDeuda && deudaProgramada > 0 && (
             <form onSubmit={handlePagarSaldo} className="bg-surface-container rounded-xl border border-outline-variant/60 overflow-hidden">
               <div className="px-4 pt-3.5 pb-2 border-b border-outline-variant/40 flex items-center gap-2">
                 <CreditCard className="h-3.5 w-3.5 text-primary" />
@@ -242,8 +273,8 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                       <SolesIcon className="h-3 w-3" /> Monto (S/.)
                     </label>
                     <input
-                      type="number" required min="0.01" max={deudaReal} step="0.01"
-                      placeholder={deudaReal.toFixed(2)}
+                      type="number" required min="0.01" max={deudaProgramada} step="0.01"
+                      placeholder={deudaProgramada.toFixed(2)}
                       className="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-mono placeholder:text-on-surface-variant/40"
                       value={montoPago}
                       onChange={(e) => setMontoPago(e.target.value)}
@@ -287,9 +318,9 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
         {/* ── FOOTER ─────────────────────────────────────────────── */}
         <div className="px-5 py-3.5 border-t border-outline-variant flex items-center justify-between gap-3 bg-surface-container-lowest">
           <div className="flex items-center gap-1.5 text-[10px] font-semibold">
-            {deudaReal > 0 ? (
+            {!alDiaParaCheckOut ? (
               <span className="flex items-center gap-1 text-red-500">
-                <Lock className="h-3 w-3" /> Check-out bloqueado por deuda
+                <Lock className="h-3 w-3" /> Check-out bloqueado por deuda acumulada
               </span>
             ) : (
               <span className="flex items-center gap-1 text-emerald-600">
@@ -307,9 +338,9 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
             </button>
             <button
               onClick={handleActionCheckout}
-              disabled={deudaReal > 0}
+              disabled={!alDiaParaCheckOut}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold bg-error text-on-error rounded-lg hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
-              title={deudaReal > 0 ? 'Salde la cuenta primero' : 'Finalizar estancia'}
+              title={!alDiaParaCheckOut ? 'Cobre la deuda transcurrida primero' : 'Finalizar estancia'}
             >
               <LogOut className="h-3.5 w-3.5" />
               Check-Out

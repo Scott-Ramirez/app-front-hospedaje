@@ -28,12 +28,37 @@ export class AuthRepository implements IAuthRepository {
     return data;
   }
 
-  async registrarUsuario(username: string, clave: string, nombre: string, rol: RolUsuario): Promise<any> {
+  async registrarUsuario(
+    username: string, 
+    clave: string, 
+    nombre: string, 
+    rol: RolUsuario,
+    horaInicioTurno?: string | null,
+    horaFinTurno?: string | null
+  ): Promise<any> {
     const { data } = await api.post<any>('/auth/usuarios/registro', {
       username,
       clave,
       nombre,
       rol,
+      horaInicioTurno: horaInicioTurno || null,
+      horaFinTurno: horaFinTurno || null,
+    });
+    return data;
+  }
+
+  async actualizarUsuario(
+    id: number,
+    nombre: string,
+    rol: RolUsuario,
+    horaInicioTurno?: string | null,
+    horaFinTurno?: string | null
+  ): Promise<any> {
+    const { data } = await api.patch<any>(`/auth/usuarios/${id}`, {
+      nombre,
+      rol,
+      horaInicioTurno: horaInicioTurno || null,
+      horaFinTurno: horaFinTurno || null,
     });
     return data;
   }

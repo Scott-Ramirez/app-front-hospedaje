@@ -12,7 +12,9 @@ import {
   Check, 
   X,
   UserCheck,
-  UserX
+  UserX,
+  UserCog,
+  Clock
 } from 'lucide-react';
 
 const authRepo = new AuthRepository();
@@ -27,9 +29,24 @@ export const UsuariosPanel: React.FC = () => {
     username: '',
     clave: '',
     nombre: '',
-    rol: 'recepcionista' as RolUsuario
+    rol: 'recepcionista' as RolUsuario,
+    tieneHorarioLimitado: false,
+    horaInicioTurno: '07:00',
+    horaFinTurno: '19:00',
   });
   const [regLoading, setRegLoading] = useState(false);
+
+  // Editar usuario
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    id: 0,
+    nombre: '',
+    rol: 'recepcionista' as RolUsuario,
+    tieneHorarioLimitado: false,
+    horaInicioTurno: '07:00',
+    horaFinTurno: '19:00',
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   // Resetear password
   const [showResetModal, setShowResetModal] = useState(false);
@@ -45,8 +62,6 @@ export const UsuariosPanel: React.FC = () => {
       setUsuarios(data || []);
     } catch (error: any) {
       console.error(error);
-      // Si el endpoint /auth/usuarios no existe en la base (o es privado/error),
-      // inicializamos una lista vacía para no romper la pantalla, pero avisamos.
       setUsuarios([]);
     } finally {
       setLoading(false);
@@ -75,11 +90,21 @@ export const UsuariosPanel: React.FC = () => {
         regForm.username.trim(),
         regForm.clave.trim(),
         regForm.nombre.trim(),
-        regForm.rol
+        regForm.rol,
+        regForm.tieneHorarioLimitado ? regForm.horaInicioTurno : null,
+        regForm.tieneHorarioLimitado ? regForm.horaFinTurno : null
       );
       AlertAdapter.success('Usuario Creado', `El empleado '${regForm.nombre}' se registró exitosamente.`);
       setShowRegModal(false);
-      setRegForm({ username: '', clave: '', nombre: '', rol: 'recepcionista' });
+      setRegForm({
+        username: '',
+        clave: '',
+        nombre: '',
+        rol: 'recepcionista',
+        tieneHorarioLimitado: false,
+        horaInicioTurno: '07:00',
+        horaFinTurno: '19:00',
+      });
       cargarUsuarios();
     } catch (error: any) {
       console.error(error);
@@ -88,6 +113,46 @@ export const UsuariosPanel: React.FC = () => {
     } finally {
       setRegLoading(false);
     }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editForm.nombre.trim()) {
+      AlertAdapter.toast('El nombre es obligatorio', 'error');
+      return;
+    }
+
+    try {
+      setEditLoading(true);
+      await authRepo.actualizarUsuario(
+        editForm.id,
+        editForm.nombre.trim(),
+        editForm.rol,
+        editForm.tieneHorarioLimitado ? editForm.horaInicioTurno : null,
+        editForm.tieneHorarioLimitado ? editForm.horaFinTurno : null
+      );
+      AlertAdapter.success('Usuario Actualizado', 'Los datos se guardaron correctamente.');
+      setShowEditModal(false);
+      cargarUsuarios();
+    } catch (error: any) {
+      console.error(error);
+      const msg = error.response?.data?.message || 'Error al actualizar al usuario.';
+      AlertAdapter.error('Fallo en Edición', Array.isArray(msg) ? msg.join(', ') : msg);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const openEditModal = (usr: any) => {
+    setEditForm({
+      id: usr.id,
+      nombre: usr.nombre,
+      rol: usr.rol,
+      tieneHorarioLimitado: !!(usr.horaInicioTurno && usr.horaFinTurno),
+      horaInicioTurno: usr.horaInicioTurno || '07:00',
+      horaFinTurno: usr.horaFinTurno || '19:00',
+    });
+    setShowEditModal(true);
   };
 
   const handleResetSubmit = async (e: React.FormEvent) => {
@@ -151,7 +216,7 @@ export const UsuariosPanel: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-[1000px] mx-auto text-on-surface space-y-6">
+    <div className="p-6 max-w-[1200px] mx-auto text-on-surface space-y-6">
       
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm">
@@ -160,7 +225,7 @@ export const UsuariosPanel: React.FC = () => {
             <Users className="h-6 w-6" /> Gestión de Usuarios y Personal
           </h2>
           <p className="text-xs text-on-surface-variant mt-1">
-            Registra nuevos recepcionistas y supervisores, o restablece accesos bloqueados de terminal.
+            Registra nuevos recepcionistas y supervisores, asigna turnos y jornadas de trabajo, o gestiona accesos de terminal.
           </p>
         </div>
         
@@ -199,7 +264,7 @@ export const UsuariosPanel: React.FC = () => {
             <div>
               <h3 className="text-sm font-bold text-on-surface">No se listan usuarios</h3>
               <p className="text-xs text-on-surface-variant mt-1">
-                Usa el botón de arriba para registrar nuevos empleados. Podrás resetear sus claves ingresando sus IDs.
+                Usa el botón de arriba para registrar nuevos empleados.
               </p>
             </div>
           </div>
@@ -208,12 +273,13 @@ export const UsuariosPanel: React.FC = () => {
             <table className="w-full text-left border-collapse text-sm">
               <thead>
                 <tr className="bg-surface-container-low text-on-surface-variant font-semibold border-b border-outline-variant">
-                  <th className="px-6 py-3.5">ID</th>
+                  <th className="px-6 py-3.5 w-16">ID</th>
                   <th className="px-6 py-3.5">Nombre</th>
                   <th className="px-6 py-3.5">Usuario (Username)</th>
                   <th className="px-6 py-3.5">Rol</th>
+                  <th className="px-6 py-3.5">Turno Laboral</th>
                   <th className="px-6 py-3.5 text-center">Estado</th>
-                  <th className="px-6 py-3.5 text-center">Acciones</th>
+                  <th className="px-6 py-3.5 text-center w-80">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
@@ -233,6 +299,16 @@ export const UsuariosPanel: React.FC = () => {
                         {usr.rol}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-xs font-semibold text-on-surface-variant">
+                      {usr.horaInicioTurno && usr.horaFinTurno ? (
+                        <span className="flex items-center gap-1.5 text-primary">
+                          <Clock className="h-3.5 w-3.5 shrink-0" />
+                          {usr.horaInicioTurno} hrs - {usr.horaFinTurno} hrs
+                        </span>
+                      ) : (
+                        <span className="text-on-surface-variant/60 font-medium">Libre / Sin restricción</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex items-center gap-1 text-xs font-bold ${usr.activo !== false ? 'text-green-600' : 'text-red-500'}`}>
                         {usr.activo !== false ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
@@ -242,27 +318,36 @@ export const UsuariosPanel: React.FC = () => {
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
+                          onClick={() => openEditModal(usr)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-outline-variant hover:bg-surface-container-high text-xs font-bold transition-all cursor-pointer shadow-sm text-on-surface-variant"
+                          title="Editar datos de usuario"
+                        >
+                          <UserCog className="h-3.5 w-3.5 text-primary" />
+                          <span>Editar</span>
+                        </button>
+                        
+                        <button
                           onClick={() => openResetModal(usr.id, usr.username)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-outline-variant hover:bg-surface-container-high text-xs font-bold transition-all cursor-pointer shadow-sm text-on-surface-variant"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-outline-variant hover:bg-surface-container-high text-xs font-bold transition-all cursor-pointer shadow-sm text-on-surface-variant"
                           title="Restablecer contraseña"
                         >
                           <Key className="h-3.5 w-3.5 text-amber-500" />
-                          <span>Reset Clave</span>
+                          <span>Clave</span>
                         </button>
                         
                         {usr.activo !== false ? (
                           <button
                             onClick={() => handleToggleEstado(usr.id, usr.username, false)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-red-500/20 hover:bg-red-500/5 text-red-500 hover:text-red-600 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-red-500/20 hover:bg-red-500/5 text-red-500 hover:text-red-600 text-xs font-bold transition-all cursor-pointer shadow-sm"
                             title="Dar de baja a este usuario"
                           >
                             <UserX className="h-3.5 w-3.5" />
-                            <span>Dar de baja</span>
+                            <span>Baja</span>
                           </button>
                         ) : (
                           <button
                             onClick={() => handleToggleEstado(usr.id, usr.username, true)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-green-500/20 hover:bg-green-500/5 text-green-600 hover:text-green-700 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-green-500/20 hover:bg-green-500/5 text-green-600 hover:text-green-700 text-xs font-bold transition-all cursor-pointer shadow-sm"
                             title="Reactivar usuario"
                           >
                             <UserCheck className="h-3.5 w-3.5" />
@@ -341,10 +426,48 @@ export const UsuariosPanel: React.FC = () => {
                   value={regForm.rol}
                   onChange={(e) => setRegForm({ ...regForm, rol: e.target.value as RolUsuario })}
                 >
-                  <option value="recepcionista" className="bg-surface text-on-surface">Recepcionista</option>
-                  <option value="supervisor" className="bg-surface text-on-surface">Supervisor</option>
-                  <option value="admin" className="bg-surface text-on-surface">Administrador</option>
+                  <option value="recepcionista">Recepcionista</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="admin">Administrador</option>
                 </select>
+              </div>
+
+              {/* Nuevos Campos: Turno Laboral */}
+              <div className="pt-2 border-t border-outline-variant/60">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={regForm.tieneHorarioLimitado}
+                    onChange={(e) => setRegForm({ ...regForm, tieneHorarioLimitado: e.target.checked })}
+                    className="rounded text-primary focus:ring-primary"
+                  />
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">Restringir horario de trabajo</span>
+                </label>
+                
+                {regForm.tieneHorarioLimitado && (
+                  <div className="grid grid-cols-2 gap-4 mt-3 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase">Hora Inicio</label>
+                      <input
+                        type="time"
+                        required
+                        className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        value={regForm.horaInicioTurno}
+                        onChange={(e) => setRegForm({ ...regForm, horaInicioTurno: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase">Hora Fin</label>
+                      <input
+                        type="time"
+                        required
+                        className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        value={regForm.horaFinTurno}
+                        onChange={(e) => setRegForm({ ...regForm, horaFinTurno: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-outline-variant flex gap-3 justify-end bg-surface-container-lowest -mx-6 -mb-6 p-4">
@@ -362,6 +485,110 @@ export const UsuariosPanel: React.FC = () => {
                   className="px-5 py-2 text-sm font-bold bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] rounded-md transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
                   {regLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Registrar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Usuario */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-sm animate-fade-in duration-200">
+          <div className="bg-surface text-on-surface w-full max-w-md rounded-xl shadow-xl border border-outline-variant overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
+              <div>
+                <h3 className="text-lg font-bold text-primary">Editar Datos del Empleado</h3>
+                <p className="text-xs text-on-surface-variant">Modifique las propiedades principales y su rango laboral.</p>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1.5 rounded-full hover:bg-surface-container-high text-on-surface-variant cursor-pointer transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase">Nombre Completo</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ej. MARÍA TORRES"
+                  className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase"
+                  value={editForm.nombre}
+                  onChange={(e) => setEditForm({ ...editForm, nombre: e.target.value.toUpperCase() })}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase">Rol de Acceso</label>
+                <select
+                  required
+                  className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer"
+                  value={editForm.rol}
+                  onChange={(e) => setEditForm({ ...editForm, rol: e.target.value as RolUsuario })}
+                >
+                  <option value="recepcionista">Recepcionista</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+
+              {/* Campos: Turno Laboral */}
+              <div className="pt-2 border-t border-outline-variant/60">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={editForm.tieneHorarioLimitado}
+                    onChange={(e) => setEditForm({ ...editForm, tieneHorarioLimitado: e.target.checked })}
+                    className="rounded text-primary focus:ring-primary"
+                  />
+                  <span className="text-xs font-bold text-on-surface-variant uppercase">Restringir horario de trabajo</span>
+                </label>
+                
+                {editForm.tieneHorarioLimitado && (
+                  <div className="grid grid-cols-2 gap-4 mt-3 animate-in fade-in duration-200">
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase">Hora Inicio</label>
+                      <input
+                        type="time"
+                        required
+                        className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        value={editForm.horaInicioTurno}
+                        onChange={(e) => setEditForm({ ...editForm, horaInicioTurno: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant mb-1 uppercase">Hora Fin</label>
+                      <input
+                        type="time"
+                        required
+                        className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                        value={editForm.horaFinTurno}
+                        onChange={(e) => setEditForm({ ...editForm, horaFinTurno: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t border-outline-variant flex gap-3 justify-end bg-surface-container-lowest -mx-6 -mb-6 p-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  disabled={editLoading}
+                  className="px-4 py-2 text-sm font-medium text-on-surface-variant hover:bg-surface-container-high rounded-md transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={editLoading}
+                  className="px-5 py-2 text-sm font-bold bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] rounded-md transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {editLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Guardar Cambios'}
                 </button>
               </div>
             </form>

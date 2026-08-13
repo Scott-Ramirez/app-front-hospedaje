@@ -68,7 +68,7 @@ export const EstanciasActivas = () => {
         
         <div className="flex items-center gap-2">
           <button
-            onClick={recargar}
+            onClick={() => recargar()}
             disabled={loading}
             className="h-9 w-9 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer disabled:opacity-40"
             title="Actualizar"

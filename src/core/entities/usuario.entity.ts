@@ -6,6 +6,8 @@ export interface Usuario {
   nombre: string;
   rol: RolUsuario;
   activo: boolean;
+  horaInicioTurno?: string | null;
+  horaFinTurno?: string | null;
 }
 
 export interface SesionUsuario {
