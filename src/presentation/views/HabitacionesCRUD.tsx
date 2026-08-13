@@ -225,60 +225,56 @@ export const HabitacionesCRUD: React.FC = () => {
                                                 {room.estado}
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-5">
+                                        <td className="py-3.5 px-5 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 
-                                                {/* Para habitaciones en limpieza: Botón Notificar y Liberar */}
-                                                {room.estado === 'limpieza' && (
-                                                    <>
-                                                        <button
-                                                            onClick={() => setNotificarHabitacion(room.numero)}
-                                                            className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
-                                                            title="Notificar a Admin/Supervisor sobre esta habitación"
-                                                        >
-                                                            <Bell className="h-3.5 w-3.5" /> Notificar
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleLiberar(room.id!, room.numero)}
-                                                            className="px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
-                                                            title="Liberar e internalizar cuarto a inventario"
-                                                        >
-                                                            <Check className="h-3.5 w-3.5" /> Liberar
-                                                        </button>
-                                                    </>
-                                                )}
-
-                                                {/* Para otras habitaciones: Botón de notificación rápida */}
-                                                {room.estado !== 'limpieza' && (
+                                                {/* 🌟 1. BOTÓN NOTIFICAR: Únicamente en filas de Habitación Ocupada */}
+                                                {room.estado === 'ocupado' && (
                                                     <button
                                                         onClick={() => setNotificarHabitacion(room.numero)}
-                                                        className="p-1.5 border border-primary/20 hover:bg-primary/10 text-primary rounded-md transition-colors cursor-pointer"
-                                                        title="Enviar notificación sobre esta habitación"
+                                                        className="px-2.5 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-on-primary border border-primary/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-xs"
+                                                        title="Notificar a Admin/Supervisor sobre esta habitación ocupada"
                                                     >
-                                                        <Bell className="h-3.5 w-3.5" />
+                                                        <Bell className="h-3.5 w-3.5" /> Notificar
                                                     </button>
                                                 )}
 
-                                                {/* ACCIÓN MODIFICAR: Solo Admin / Supervisor */}
+                                                {/* 🌟 2. BOTÓN LIBERAR: Exclusivo para Administrador y Supervisor cuando la habitación está en Limpieza */}
+                                                {room.estado === 'limpieza' && esAdminOSupervisor && (
+                                                    <button
+                                                        onClick={() => handleLiberar(room.id!, room.numero)}
+                                                        className="px-2.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
+                                                        title="Liberar habitación y colocar en disponible"
+                                                    >
+                                                        <Check className="h-3.5 w-3.5" /> Liberar
+                                                    </button>
+                                                )}
+
+                                                {/* 🌟 3. ACCIÓN MODIFICAR: Exclusiva para Admin y Supervisor (Deshabilitada/Oculta para Recepcionista) */}
                                                 {esAdminOSupervisor && (
                                                     <button
                                                         onClick={() => handleEditarClick(room)}
                                                         className="p-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-md transition-colors cursor-pointer"
-                                                        title="Modificar parámetros"
+                                                        title="Modificar parámetros de la habitación"
                                                     >
                                                         <Edit3 className="h-3.5 w-3.5" />
                                                     </button>
                                                 )}
 
-                                                {/* ACCIÓN ELIMINAR: Solo Admin */}
+                                                {/* 🌟 4. ACCIÓN ELIMINAR: Exclusiva para Admin */}
                                                 {esAdmin && (
                                                     <button
                                                         onClick={() => handleEliminar(room.id!)}
                                                         className="p-1.5 border border-error/20 hover:bg-error/5 text-error rounded-md transition-colors cursor-pointer"
-                                                        title="Eliminar de base de datos"
+                                                        title="Eliminar habitación de la base de datos"
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </button>
+                                                )}
+
+                                                {/* Si el recepcionista no tiene acciones en este estado (ej. disponible o limpieza), muestra un guión */}
+                                                {esRecepcionista && room.estado !== 'ocupado' && (
+                                                    <span className="text-xs text-on-surface-variant/40 italic">---</span>
                                                 )}
                                             </div>
                                         </td>
