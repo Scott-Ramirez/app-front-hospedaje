@@ -82,7 +82,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   if (!isOpen || !estancia) return null;
 
   const totalProgramado = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
-  const deudaProgramada = Math.max(0, totalProgramado - totalPagos);
+  const deudaProgramada = Number(Math.max(0, totalProgramado - totalPagos).toFixed(2));
   const porcentajePagado = totalProgramado > 0 ? Math.min(100, (totalPagos / totalProgramado) * 100) : 100;
 
   // Simular check-out para el día de hoy
@@ -98,7 +98,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
   const diasRealesHoy = getDiasSiCheckOutHoy();
   const totalRealesHoy = diasRealesHoy * Number(estancia.habitacion?.precio || 0);
-  const deudaRealHoy = Math.max(0, totalRealesHoy - totalPagos);
+  const deudaRealHoy = Number(Math.max(0, totalRealesHoy - totalPagos).toFixed(2));
   const alDiaParaCheckOut = deudaRealHoy === 0;
 
   const handlePagarSaldo = async (e: React.FormEvent) => {
@@ -361,6 +361,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                       className="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-mono placeholder:text-on-surface-variant/40"
                       value={montoPago}
                       onChange={(e) => setMontoPago(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
