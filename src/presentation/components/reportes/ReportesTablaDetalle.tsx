@@ -20,7 +20,120 @@ interface ReportesTablaDetalleProps {
   };
 }
 
+interface DonutSegment {
+  label: string;
+  value: number;
+  color: string;
+}
+
+const DonutChart: React.FC<{ segments: DonutSegment[]; formatValue?: (v: number) => string; centerLabel?: string }> = ({ 
+  segments, 
+  formatValue,
+  centerLabel = "Total"
+}) => {
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
+  if (total === 0) {
+    return (
+      <div className="h-32 flex items-center justify-center text-xs text-on-surface-variant/40 border border-dashed border-outline-variant/40 rounded-xl bg-surface-container/20">
+        Sin transacciones registradas
+      </div>
+    );
+  }
+
+  const radius = 40;
+  const circumference = 2 * Math.PI * radius; // ~251.32
+  let accumulatedPercent = 0;
+  const formatter = formatValue || ((val: number) => val.toString());
+
+  return (
+    <div className="flex items-center gap-3.5 justify-center py-2">
+      <div className="relative h-24 w-24 shrink-0">
+        <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+          <circle cx="50" cy="50" r={radius} fill="transparent" stroke="currentColor" strokeOpacity="0.05" strokeWidth="10" />
+          {segments.map((seg, idx) => {
+            const percent = seg.value / total;
+            const strokeLength = percent * circumference;
+            const strokeOffset = circumference - (accumulatedPercent * circumference);
+            accumulatedPercent += percent;
+
+            return (
+              <circle
+                key={idx}
+                cx="50"
+                cy="50"
+                r={radius}
+                fill="transparent"
+                stroke={seg.color}
+                strokeWidth="10"
+                strokeDasharray={`${strokeLength} ${circumference}`}
+                strokeDashoffset={strokeOffset}
+                strokeLinecap="round"
+                className="transition-all duration-500 hover:stroke-[12px]"
+                style={{ transformOrigin: 'center' }}
+              />
+            );
+          })}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center select-none pointer-events-none">
+          <span className="text-[8px] font-black text-on-surface-variant uppercase tracking-widest leading-none">{centerLabel}</span>
+          <span className="text-sm font-black text-on-surface mt-0.5">{formatter(total)}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1 flex-1 min-w-0">
+        {segments.map((seg, idx) => {
+          const percent = ((seg.value / total) * 100).toFixed(0);
+          return (
+            <div key={idx} className="flex items-center gap-1 text-[10px] font-bold text-on-surface-variant truncate">
+              <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
+              <span className="truncate capitalize">{seg.label}</span>
+              <span className="font-mono text-on-surface font-black ml-auto shrink-0">
+                {formatter(seg.value)} ({percent}%)
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ dataFiltrada }) => {
+  const metodosSegments = Object.entries(dataFiltrada.metodosMap)
+    .filter(([_, value]) => value > 0)
+    .map(([metodo, value]) => {
+      const metodosEstilos: { [k: string]: { label: string; color: string } } = {
+        efectivo: { label: 'Efectivo', color: '#10b981' },
+        yape: { label: 'Yape', color: '#a855f7' },
+        plin: { label: 'Plin', color: '#06b6d4' },
+        tarjeta: { label: 'Tarjeta', color: '#3b82f6' },
+        transferencia: { label: 'Transf.', color: '#f59e0b' },
+      };
+      const info = metodosEstilos[metodo] || { label: metodo, color: '#6b7280' };
+      return {
+        label: info.label,
+        value,
+        color: info.color
+      };
+    });
+
+  const categoriaSegments = Object.entries(dataFiltrada.ocupacionTipoMap)
+    .filter(([_, value]) => value > 0)
+    .map(([tipo, value]) => {
+      const tipoEstilos: { [k: string]: { label: string; color: string } } = {
+        simple: { label: 'Simple', color: '#006b4d' },
+        matrimonial: { label: 'Matrimonial', color: '#6366f1' },
+        doble: { label: 'Doble', color: '#10b981' },
+        triple: { label: 'Triple', color: '#f97316' },
+      };
+      const info = tipoEstilos[tipo.toLowerCase()] || { label: tipo, color: '#6b7280' };
+      return {
+        label: info.label,
+        value,
+        color: info.color
+      };
+    });
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 print-leaderboard-grid">
       
@@ -82,93 +195,34 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
 
       {/* Métodos de Pago */}
       <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
-        <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/60 pb-3">
+        <div className="flex items-center gap-2 mb-3 border-b border-outline-variant/60 pb-2.5">
           <Coins className="h-5 w-5 text-primary" />
           <div>
             <h3 className="font-bold text-sm text-on-surface">Métodos de Pago</h3>
-            <p className="text-[10px] text-on-surface-variant">Porcentaje de recaudación por canal en el periodo</p>
+            <p className="text-[10px] text-on-surface-variant">Canales de recaudación económica</p>
           </div>
         </div>
-
-        <div className="space-y-3 flex-1 flex flex-col justify-around">
-          {Object.entries(dataFiltrada.metodosMap).map(([metodo, monto]) => {
-            const total = dataFiltrada.ingresosTotales || 1;
-            const pct = Math.round((monto / total) * 100);
-            
-            const metodosEstilos: { [k: string]: { label: string; color: string } } = {
-              efectivo: { label: 'Efectivo', color: 'bg-emerald-500' },
-              yape: { label: 'Yape', color: 'bg-purple-600' },
-              plin: { label: 'Plin', color: 'bg-cyan-500' },
-              tarjeta: { label: 'Tarjeta', color: 'bg-blue-600' },
-              transferencia: { label: 'Transferencia', color: 'bg-amber-500' },
-            };
-            const info = metodosEstilos[metodo] || { label: metodo, color: 'bg-primary' };
-
-            return (
-              <div key={metodo} className="space-y-1 text-xs">
-                <div className="flex items-center justify-between font-bold text-on-surface-variant">
-                  <span className="capitalize">{info.label}</span>
-                  <span className="font-mono text-on-surface font-black">
-                    S/. {monto.toFixed(2)} <span className="text-primary ml-1">({pct}%)</span>
-                  </span>
-                </div>
-                <div className="w-full bg-surface-container h-2.5 rounded-full overflow-hidden">
-                  <div 
-                    className={`${info.color} h-full rounded-full transition-all duration-500`} 
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <DonutChart 
+          segments={metodosSegments} 
+          formatValue={(val) => `S/. ${val.toFixed(0)}`}
+          centerLabel="Total Rec"
+        />
       </div>
 
       {/* Ocupación por Categoría */}
       <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
-        <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/60 pb-3">
+        <div className="flex items-center gap-2 mb-3 border-b border-outline-variant/60 pb-2.5">
           <BarChart3 className="h-5 w-5 text-primary" />
           <div>
             <h3 className="font-bold text-sm text-on-surface">Demanda por Tipo</h3>
-            <p className="text-[10px] text-on-surface-variant">Preferencias de habitaciones del periodo</p>
+            <p className="text-[10px] text-on-surface-variant">Preferencias de habitaciones</p>
           </div>
         </div>
-
-        <div className="space-y-3 flex-1 flex flex-col justify-around">
-          {Object.keys(dataFiltrada.ocupacionTipoMap).length === 0 ? (
-            <p className="text-center py-6 text-xs text-on-surface-variant/60">Sin registros en este periodo.</p>
-          ) : (
-            Object.entries(dataFiltrada.ocupacionTipoMap).map(([tipo, cant]) => {
-              const total = dataFiltrada.totalEstancias || 1;
-              const pct = Math.round((cant / total) * 100);
-              
-              const tipoEstilos: { [k: string]: { label: string; color: string } } = {
-                simple: { label: 'Simple', color: 'bg-primary' },
-                matrimonial: { label: 'Matrimonial', color: 'bg-indigo-500' },
-                doble: { label: 'Doble', color: 'bg-emerald-500' },
-                triple: { label: 'Triple', color: 'bg-orange-500' },
-              };
-              const info = tipoEstilos[tipo.toLowerCase()] || { label: tipo, color: 'bg-zinc-500' };
-
-              return (
-                <div key={tipo} className="space-y-1 text-xs">
-                  <div className="flex items-center justify-between font-bold text-on-surface-variant">
-                    <span className="capitalize">{info.label}</span>
-                    <span className="font-mono text-on-surface font-black">
-                      {cant} salidas <span className="text-primary ml-1">({pct}%)</span>
-                    </span>
-                  </div>
-                  <div className="w-full bg-surface-container h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className={`${info.color} h-full rounded-full transition-all duration-500`} 
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <DonutChart 
+          segments={categoriaSegments} 
+          formatValue={(val) => `${val} salidas`}
+          centerLabel="Salidas"
+        />
       </div>
 
       {/* Bitácora de Auditoría de Cajas */}
