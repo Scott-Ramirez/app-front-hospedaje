@@ -127,7 +127,7 @@ export const ReportesGraficoBarras: React.FC<ReportesGraficoBarrasProps> = ({
                       y={y - 6}
                       textAnchor="middle"
                       fill="currentColor"
-                      className="text-[9px] font-black select-none opacity-0 group-hover/bar:opacity-100 transition-opacity"
+                      className={`text-[9px] font-black select-none transition-opacity ${N <= 12 ? 'opacity-100' : 'opacity-0 group-hover/bar:opacity-100'}`}
                     >
                       {val}
                     </text>
@@ -179,6 +179,7 @@ export const ReportesGraficoBarras: React.FC<ReportesGraficoBarrasProps> = ({
               );
             })}
 
+            {/* Barras de datos */}
             {labels.map((label, i) => {
               const valIngreso = ingresosData[i] || 0;
               const valEgreso = egresosData[i] || 0;
@@ -198,12 +199,40 @@ export const ReportesGraficoBarras: React.FC<ReportesGraficoBarrasProps> = ({
                   <rect x={xBase} y="0" width={doubleColWidth} height={chartHeight} fill="transparent" className="hover:fill-surface-container-high/30 transition-colors" />
                   <rect x={xIngreso} y={yIngreso} width={subBarWidth} height={heightIngreso} rx={N <= 12 ? '2' : '1'} fill="var(--color-primary)" fillOpacity="0.85" className="hover:fill-opacity-100 transition-all duration-300" />
                   <rect x={xEgreso} y={yEgreso} width={subBarWidth} height={heightEgreso} rx={N <= 12 ? '2' : '1'} fill="var(--color-error)" fillOpacity="0.85" className="hover:fill-opacity-100 transition-all duration-300" />
-                  {(valIngreso > 0 || valEgreso > 0) && (
-                    <g className="opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
-                      <text x={xBase + doubleColWidth / 2} y={Math.min(yIngreso, yEgreso) - 10} textAnchor="middle" fill="currentColor" className="text-[8px] md:text-[9px] font-black">
-                        +{valIngreso.toFixed(0)} / -{valEgreso.toFixed(0)}
-                      </text>
-                    </g>
+                  
+                  {N <= 12 ? (
+                    <>
+                      {valIngreso > 0 && (
+                        <text
+                          x={xIngreso + subBarWidth / 2}
+                          y={yIngreso - 5}
+                          textAnchor="middle"
+                          fill="#006b4d"
+                          className="text-[8px] font-black select-none"
+                        >
+                          S/. {valIngreso.toFixed(0)}
+                        </text>
+                      )}
+                      {valEgreso > 0 && (
+                        <text
+                          x={xEgreso + subBarWidth / 2}
+                          y={yEgreso - 5}
+                          textAnchor="middle"
+                          fill="#ba1a1a"
+                          className="text-[8px] font-black select-none"
+                        >
+                          S/. {valEgreso.toFixed(0)}
+                        </text>
+                      )}
+                    </>
+                  ) : (
+                    (valIngreso > 0 || valEgreso > 0) && (
+                      <g className="opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none">
+                        <text x={xBase + doubleColWidth / 2} y={Math.min(yIngreso, yEgreso) - 10} textAnchor="middle" fill="currentColor" className="text-[8px] md:text-[9px] font-black">
+                          +{valIngreso.toFixed(0)} / -{valEgreso.toFixed(0)}
+                        </text>
+                      </g>
+                    )
                   )}
                   {showLabel && (
                     <text x={xBase + doubleColWidth / 2} y={chartHeight + 16} textAnchor="middle" fill="currentColor" className="text-[8px] md:text-[9px] font-bold opacity-80">{label}</text>
