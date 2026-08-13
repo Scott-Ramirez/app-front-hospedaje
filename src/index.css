@@ -124,3 +124,63 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* 
+ * ====================================================================
+ * 🖨️ ESTILOS DE IMPRESIÓN (PDF / PAPEL)
+ * ====================================================================
+ */
+.only-print {
+  display: none !important;
+}
+
+@media print {
+  /* Ocultar elementos estructurales del layout */
+  aside,
+  header,
+  .no-print,
+  button,
+  select,
+  input {
+    display: none !important;
+  }
+
+  /* Mostrar encabezados exclusivos de impresión */
+  .only-print {
+    display: block !important;
+  }
+
+  /* Forzar ancho completo del contenedor principal */
+  main {
+    margin: 0 !important;
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+  }
+
+  .mx-auto {
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* Resetear colores de fondo para ahorro de tinta */
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Estilos de tarjetas y contenedores impresos */
+  .print-card {
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Evitar saltos de página huérfanos en tablas */
+  tr, g, svg {
+    page-break-inside: avoid !important;
+  }
+}

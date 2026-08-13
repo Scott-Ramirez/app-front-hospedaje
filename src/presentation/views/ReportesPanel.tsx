@@ -481,6 +481,35 @@ export const ReportesPanel: React.FC = () => {
         });
       }
 
+      html += `  <tr><td colspan="7"></td></tr>`;
+      html += `  <tr><td colspan="7" class="section-title">V. BITÁCORA DE AUDITORÍA CONTABLE DE CAJA</td></tr>`;
+      html += `  <tr>`;
+      html += `    <td class="table-header">Fecha Apertura</td>`;
+      html += `    <td class="table-header">Fecha Cierre</td>`;
+      html += `    <td class="table-header">Recepcionista</td>`;
+      html += `    <td class="table-header">Monto Inicial</td>`;
+      html += `    <td class="table-header">Ingresos</td>`;
+      html += `    <td class="table-header">Egresos</td>`;
+      html += `    <td class="table-header">Descuadre</td>`;
+      html += `  </tr>`;
+
+      if (dataFiltrada.cajaSesionesPeriodo.length === 0) {
+        html += `  <tr><td colspan="7" class="table-cell-center" style="color: #64748b;">No hay sesiones de caja registradas en este periodo</td></tr>`;
+      } else {
+        dataFiltrada.cajaSesionesPeriodo.forEach(cs => {
+          const descuadre = cs.descuadre ?? 0;
+          html += `  <tr>`;
+          html += `    <td class="table-cell-center">${new Date(cs.fecha_apertura).toLocaleString()}</td>`;
+          html += `    <td class="table-cell-center">${cs.fecha_cierre ? new Date(cs.fecha_cierre).toLocaleString() : 'Activa'}</td>`;
+          html += `    <td class="table-cell">${cs.usuario?.nombre || 'Desconocido'}</td>`;
+          html += `    <td class="table-cell-right">S/. ${Number(cs.monto_inicial || 0).toFixed(2)}</td>`;
+          html += `    <td class="table-cell-right" style="color: #006b4d;">S/. ${Number(cs.monto_ingresos || 0).toFixed(2)}</td>`;
+          html += `    <td class="table-cell-right" style="color: #ba1a1a;">S/. ${Number(cs.monto_egresos || 0).toFixed(2)}</td>`;
+          html += `    <td class="table-cell-center" style="font-weight: bold; ${descuadre !== 0 ? 'color: #ba1a1a;' : 'color: #006b4d;'}">${descuadre === 0 ? 'OK' : 'S/. ' + descuadre.toFixed(2)}</td>`;
+          html += `  </tr>`;
+        });
+      }
+
       html += `</table>`;
       html += `</body></html>`;
 
