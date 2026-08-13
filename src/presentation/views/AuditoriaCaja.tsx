@@ -106,8 +106,9 @@ export const AuditoriaCaja: React.FC = () => {
                     <th className="p-4">Apertura</th>
                     <th className="p-4">Cierre</th>
                     <th className="p-4 text-right">Inicial (Base)</th>
-                    <th className="p-4 text-right">Cobros (+)</th>
+                    <th className="p-4 text-right">Efectivo (+)</th>
                     <th className="p-4 text-right">Gastos (-)</th>
+                    <th className="p-4 text-right">Yape/Plin (★)</th>
                     <th className="p-4 text-right">Entregado</th>
                     <th className="p-4 text-right">Arqueo (Descuadre)</th>
                     <th className="p-4">Estado</th>
@@ -156,8 +157,9 @@ export const AuditoriaCaja: React.FC = () => {
 
                         {/* Montos */}
                         <td className="p-4 text-right font-mono">S/. {Number(t.monto_inicial).toFixed(2)}</td>
-                        <td className="p-4 text-right font-mono text-emerald-600">S/. {Number(t.monto_ingresos).toFixed(2)}</td>
+                        <td className="p-4 text-right font-mono text-emerald-600">S/. {Number(t.monto_ingresos_efectivo || 0).toFixed(2)}</td>
                         <td className="p-4 text-right font-mono text-error">S/. {Number(t.monto_egresos).toFixed(2)}</td>
+                        <td className="p-4 text-right font-mono text-blue-600">S/. {Number(t.monto_ingresos_digital || 0).toFixed(2)}</td>
                         
                         <td className="p-4 text-right font-mono font-bold">
                           {t.monto_real_entregado !== null && t.monto_real_entregado !== undefined ? (

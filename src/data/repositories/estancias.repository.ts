@@ -88,8 +88,8 @@ export const estanciasRepository = {
   /**
    * Obtiene el saldo o deuda pendiente de una estancia.
    */
-  async obtenerDeuda(id: string): Promise<{ deuda: number; totalCargos: number; totalPagos: number }> {
-    const response = await api.get<{ deuda: number; totalCargos: number; totalPagos: number }>(`/estancias/${id}/deuda`);
+  async obtenerDeuda(id: string): Promise<{ deuda: number; totalCargos: number; totalPagos: number; pagos?: any[] }> {
+    const response = await api.get<{ deuda: number; totalCargos: number; totalPagos: number; pagos?: any[] }>(`/estancias/${id}/deuda`);
     return response.data;
   },
 

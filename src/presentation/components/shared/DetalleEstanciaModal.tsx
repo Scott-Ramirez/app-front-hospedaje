@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { SolesIcon } from './SolesIcon';
 import { estanciasRepository } from '../../../data/repositories/estancias.repository';
+import { pagoRepository } from '../../../data/repositories/pago.repository';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
 import { useCajaSesion } from '../../context/CajaSesionContext';
 
@@ -25,6 +26,10 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   const [metodoPago, setMetodoPago] = useState('');
   const [submittingPago, setSubmittingPago] = useState(false);
 
+  const [listaPagos, setListaPagos] = useState<any[]>([]);
+  const [uploadingPagoId, setUploadingPagoId] = useState<string | null>(null);
+  const [selectedEvidencia, setSelectedEvidencia] = useState<string | null>(null);
+
   const formatFecha = (fechaStr: string) => {
     if (!fechaStr) return '---';
     return new Date(fechaStr).toLocaleString('es-PE', {
@@ -38,10 +43,30 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       setLoadingDeuda(true);
       const res = await estanciasRepository.obtenerDeuda(estancia.id);
       setTotalPagos(res.totalPagos ?? 0);
+      setListaPagos(res.pagos ?? []);
     } catch (err) {
       console.error('Error al cargar saldo:', err);
     } finally {
       setLoadingDeuda(false);
+    }
+  };
+
+  const handleSubirEvidencia = async (pagoId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingPagoId(pagoId);
+      const formData = new FormData();
+      formData.append('evidencia', file);
+
+      await pagoRepository.subirEvidencia(pagoId, formData);
+      AlertAdapter.success('Evidencia Guardada', 'La captura de pantalla se ha cargado correctamente.');
+      await cargarDeudaRealTime();
+    } catch (err: any) {
+      AlertAdapter.error('Error al subir', err.response?.data?.message || 'No se pudo subir el archivo.');
+    } finally {
+      setUploadingPagoId(null);
     }
   };
 
@@ -50,6 +75,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       cargarDeudaRealTime();
       setMontoPago('');
       setMetodoPago('');
+      setSelectedEvidencia(null);
     }
   }, [isOpen, estancia]);
 
@@ -255,6 +281,63 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                     <span><strong>Deuda para salida:</strong> Se debe cobrar <strong>S/. {deudaRealHoy.toFixed(2)}</strong> (de los días transcurridos reales) antes del check-out.</span>
                   </div>
                 )}
+
+                {/* HISTORIAL DE ABONOS */}
+                {listaPagos.length > 0 && (
+                  <div className="border-t border-outline-variant/40 pt-3.5 mt-3 space-y-2">
+                    <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-wider text-left">Abonos Realizados</p>
+                    <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                      {listaPagos.map((p: any) => {
+                        const isDigital = ['yape', 'plin', 'transferencia', 'tarjeta'].includes(p.metodoPago?.toLowerCase());
+                        const isUploading = uploadingPagoId === p.id;
+                        return (
+                          <div key={p.id} className="flex items-center justify-between bg-surface-container-low border border-outline-variant/30 rounded-xl p-2.5 text-xs">
+                            <div className="text-left">
+                              <p className="font-bold text-on-surface">S/. {Number(p.monto).toFixed(2)}</p>
+                              <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
+                                <span className="capitalize font-bold text-primary">{p.metodoPago || 'Efectivo'}</span> · {formatFecha(p.fecha)}
+                              </p>
+                            </div>
+                            
+                            {isDigital && (
+                              <div className="flex items-center gap-1.5">
+                                {p.evidenciaUrl ? (
+                                  <button
+                                    onClick={() => setSelectedEvidencia(pagoRepository.getEvidenciaUrl(p.evidenciaUrl))}
+                                    className="px-2.5 py-1 text-[10px] font-extrabold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-lg cursor-pointer transition-colors"
+                                    type="button"
+                                  >
+                                    👁️ Ver Pago
+                                  </button>
+                                ) : (
+                                  <label className="px-2.5 py-1 text-[10px] font-extrabold text-amber-600 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-lg cursor-pointer transition-colors flex items-center gap-1">
+                                    {isUploading ? (
+                                      <>
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        <span>Subiendo...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <span>📷 Comprobante</span>
+                                      </>
+                                    )}
+                                    <input
+                                      type="file"
+                                      accept="image/*,application/pdf"
+                                      className="hidden"
+                                      disabled={isUploading}
+                                      onChange={(e) => handleSubirEvidencia(p.id, e)}
+                                    />
+                                  </label>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -349,6 +432,48 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
         </div>
 
       </div>
+
+      {/* Visor de Comprobante / Evidencia */}
+      {selectedEvidencia && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-zinc-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
+          <div className="bg-surface border border-outline-variant/60 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+            <div className="px-5 py-3.5 border-b border-outline-variant flex items-center justify-between bg-surface-container-low">
+              <p className="text-xs font-bold text-on-surface uppercase tracking-wider">Comprobante de Pago Digital</p>
+              <button
+                onClick={() => setSelectedEvidencia(null)}
+                className="p-1 rounded-lg text-on-surface-variant hover:bg-surface-container cursor-pointer transition-colors"
+                type="button"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-5 flex-1 overflow-y-auto flex items-center justify-center bg-zinc-900">
+              {selectedEvidencia.toLowerCase().endsWith('.pdf') ? (
+                <iframe
+                  src={selectedEvidencia}
+                  title="Comprobante PDF"
+                  className="w-full h-[50vh] border-0 rounded-lg"
+                />
+              ) : (
+                <img
+                  src={selectedEvidencia}
+                  alt="Comprobante"
+                  className="max-w-full max-h-[55vh] object-contain rounded-lg shadow"
+                />
+              )}
+            </div>
+            <div className="px-5 py-3 border-t border-outline-variant bg-surface-container-lowest flex justify-end">
+              <button
+                onClick={() => setSelectedEvidencia(null)}
+                className="px-4 py-2 text-xs font-bold bg-primary text-on-primary rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                type="button"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

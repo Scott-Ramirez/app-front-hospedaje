@@ -242,9 +242,10 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
                 <th className="py-2.5 px-3">Fecha Apertura / Cierre</th>
                 <th className="py-2.5 px-3">Recepcionista</th>
                 <th className="py-2.5 px-3 text-right">Inicial</th>
-                <th className="py-2.5 px-3 text-right">Ingresos</th>
-                <th className="py-2.5 px-3 text-right">Egresos</th>
-                <th className="py-2.5 px-3 text-right">Esperado</th>
+                <th className="py-2.5 px-3 text-right">Efectivo (+)</th>
+                <th className="py-2.5 px-3 text-right">Egresos (-)</th>
+                <th className="py-2.5 px-3 text-right">Yape/Plin (★)</th>
+                <th className="py-2.5 px-3 text-right font-black">Esp. Físico</th>
                 <th className="py-2.5 px-3 text-right">Entregado</th>
                 <th className="py-2.5 px-3 text-center">Descuadre</th>
                 <th className="py-2.5 px-3 w-40">Observaciones</th>
@@ -253,14 +254,16 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
             <tbody className="divide-y divide-outline-variant/40 font-medium">
               {dataFiltrada.cajaSesionesPeriodo.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-8 text-on-surface-variant/60">
+                  <td colSpan={10} className="text-center py-8 text-on-surface-variant/60">
                     No se registran sesiones de caja en este periodo.
                   </td>
                 </tr>
               ) : (
                 dataFiltrada.cajaSesionesPeriodo.map((sesion) => {
-                  const esperado = Number(sesion.monto_inicial || 0) + Number(sesion.monto_ingresos || 0) - Number(sesion.monto_egresos || 0);
-                  const entregado = sesion.monto_real_entregado ?? esperado;
+                  const ingresosEfectivo = Number(sesion.monto_ingresos_efectivo || 0);
+                  const ingresosDigital = Number(sesion.monto_ingresos_digital || 0);
+                  const esperadoFisico = Number(sesion.monto_inicial || 0) + ingresosEfectivo - Number(sesion.monto_egresos || 0);
+                  const entregado = sesion.monto_real_entregado ?? esperadoFisico;
                   const descuadre = sesion.descuadre ?? 0;
                   
                   return (
@@ -274,14 +277,15 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
                       <td className="py-2.5 px-3 font-semibold text-on-surface capitalize">
                         {sesion.usuario?.nombre || 'Desconocido'}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">S/. {Number(sesion.monto_inicial || 0).toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right text-emerald-600 font-mono">S/. {Number(sesion.monto_ingresos || 0).toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right text-red-500 font-mono">S/. {Number(sesion.monto_egresos || 0).toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-black text-on-surface font-mono">S/. {esperado.toFixed(2)}</td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right font-mono text-[11px]">S/. {Number(sesion.monto_inicial || 0).toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right text-emerald-600 font-mono text-[11px]">S/. {ingresosEfectivo.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right text-red-500 font-mono text-[11px]">S/. {Number(sesion.monto_egresos || 0).toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right text-blue-600 font-mono text-[11px]">S/. {ingresosDigital.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-black text-on-surface font-mono text-[11px]">S/. {esperadoFisico.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right font-mono text-[11px]">
                         {sesion.fecha_cierre ? `S/. ${entregado.toFixed(2)}` : <span className="text-amber-600 font-bold">Activa</span>}
                       </td>
-                      <td className="py-2.5 px-3 text-center font-mono">
+                      <td className="py-2.5 px-3 text-center font-mono text-[11px]">
                         {descuadre === 0 ? (
                           <span className="text-emerald-600 font-bold">OK</span>
                         ) : (

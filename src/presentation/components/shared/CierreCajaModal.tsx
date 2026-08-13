@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCajaSesion } from '../../context/CajaSesionContext';
-import { X, Wallet, TrendingUp, TrendingDown, Info, Loader2, ArrowRight } from 'lucide-react';
+import { X, Wallet, Info, Loader2, ArrowRight } from 'lucide-react';
 
 interface CierreCajaModalProps {
   isOpen: boolean;
@@ -16,12 +16,13 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({ isOpen, onClos
   if (!isOpen || !cajaActiva) return null;
 
   const inicial = Number(cajaActiva.monto_inicial);
-  const ingresos = Number(cajaActiva.monto_ingresos);
+  const ingresosEfectivo = Number(cajaActiva.monto_ingresos_efectivo || 0);
+  const ingresosDigital = Number(cajaActiva.monto_ingresos_digital || 0);
   const egresos = Number(cajaActiva.monto_egresos);
-  const esperado = inicial + ingresos - egresos;
+  const esperadoFisico = inicial + ingresosEfectivo - egresos;
 
   const real = montoReal === '' ? 0 : Number(montoReal);
-  const descuadre = real - esperado;
+  const descuadre = real - esperadoFisico;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,34 +62,32 @@ export const CierreCajaModal: React.FC<CierreCajaModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Desglose del Arqueo */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-surface-container-low border border-outline-variant/40 p-3.5 rounded-xl text-center space-y-1">
-            <span className="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider">Fondo Inicial</span>
-            <p className="font-mono text-sm font-extrabold text-on-surface">S/. {inicial.toFixed(2)}</p>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="bg-surface-container-low border border-outline-variant/40 p-2.5 rounded-xl text-center space-y-1">
+            <span className="text-[9px] text-on-surface-variant uppercase font-bold tracking-wider block leading-none">Inicial</span>
+            <p className="font-mono text-xs font-extrabold text-on-surface">S/. {inicial.toFixed(2)}</p>
           </div>
-          <div className="bg-emerald-500/5 border border-emerald-500/10 p-3.5 rounded-xl text-center space-y-1">
-            <div className="flex items-center justify-center gap-1 text-emerald-600">
-              <TrendingUp className="h-3 w-3" />
-              <span className="text-[9px] uppercase font-bold tracking-wider">Ingresos (+)</span>
-            </div>
-            <p className="font-mono text-sm font-extrabold text-emerald-600">S/. {ingresos.toFixed(2)}</p>
+          <div className="bg-emerald-500/5 border border-emerald-500/10 p-2.5 rounded-xl text-center space-y-1">
+            <span className="text-[9px] text-emerald-600 uppercase font-bold tracking-wider block leading-none">Efectivo (+)</span>
+            <p className="font-mono text-xs font-extrabold text-emerald-600">S/. {ingresosEfectivo.toFixed(2)}</p>
           </div>
-          <div className="bg-error/5 border border-error/10 p-3.5 rounded-xl text-center space-y-1">
-            <div className="flex items-center justify-center gap-1 text-error">
-              <TrendingDown className="h-3 w-3" />
-              <span className="text-[9px] uppercase font-bold tracking-wider">Egresos (-)</span>
-            </div>
-            <p className="font-mono text-sm font-extrabold text-error">S/. {egresos.toFixed(2)}</p>
+          <div className="bg-error/5 border border-error/10 p-2.5 rounded-xl text-center space-y-1">
+            <span className="text-[9px] text-error uppercase font-bold tracking-wider block leading-none">Egresos (-)</span>
+            <p className="font-mono text-xs font-extrabold text-error">S/. {egresos.toFixed(2)}</p>
+          </div>
+          <div className="bg-blue-500/5 border border-blue-500/10 p-2.5 rounded-xl text-center space-y-1">
+            <span className="text-[9px] text-blue-600 uppercase font-bold tracking-wider block leading-none">Yape/Plin (★)</span>
+            <p className="font-mono text-xs font-extrabold text-blue-600">S/. {ingresosDigital.toFixed(2)}</p>
           </div>
         </div>
 
         {/* Saldo Esperado Neto */}
         <div className="bg-surface-container border border-outline-variant/60 p-4 rounded-xl flex items-center justify-between">
-          <div className="space-y-0.5">
-            <h4 className="text-xs font-black text-on-surface">Saldo Neto Esperado en Caja</h4>
-            <p className="text-[10px] text-on-surface-variant font-medium leading-none">Monto teórico calculado por el sistema.</p>
+          <div className="space-y-0.5 text-left">
+            <h4 className="text-xs font-black text-on-surface">Saldo Físico Esperado en Gaveta</h4>
+            <p className="text-[10px] text-on-surface-variant font-medium leading-none">Monto en efectivo a entregar (Fondo + Efectivo - Egresos).</p>
           </div>
-          <span className="font-mono text-xl font-black text-primary">S/. {esperado.toFixed(2)}</span>
+          <span className="font-mono text-xl font-black text-primary">S/. {esperadoFisico.toFixed(2)}</span>
         </div>
 
         {/* Formulario de Declaración */}

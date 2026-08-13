@@ -7,6 +7,8 @@ export interface CajaSesionResponse {
   fecha_cierre?: string | null;
   monto_inicial: number;
   monto_ingresos: number;
+  monto_ingresos_efectivo?: number;
+  monto_ingresos_digital?: number;
   monto_egresos: number;
   monto_real_entregado?: number | null;
   descuadre?: number | null;
