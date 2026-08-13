@@ -228,8 +228,8 @@ export const HabitacionesCRUD: React.FC = () => {
                                         <td className="py-3.5 px-5 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 
-                                                {/* 🌟 1. BOTÓN NOTIFICAR: Únicamente en filas de Habitación en LIMPIEZA */}
-                                                {room.estado === 'limpieza' && (
+                                                {/* 🌟 1. BOTÓN NOTIFICAR: Exclusivo para el Recepcionista en filas de Habitación en LIMPIEZA */}
+                                                {room.estado === 'limpieza' && esRecepcionista && (
                                                     <button
                                                         onClick={() => setNotificarHabitacion(room.numero)}
                                                         className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"

@@ -147,6 +147,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     socket.on('notificacion.directa', (data: any) => {
       const currentUser = usuarioRef.current;
       if (currentUser) {
+        // Los recepcionistas no reciben notificaciones de bandeja en su sesión
+        if (currentUser.rol === 'recepcionista') return;
+
         const esDestinatario = data.destinatarioRol === 'todos' || data.destinatarioRol === currentUser.rol || currentUser.rol === 'admin';
         if (esDestinatario) {
           const habitacionTag = data.habitacionNumero ? `Hab. ${data.habitacionNumero}` : 'ALERTA';

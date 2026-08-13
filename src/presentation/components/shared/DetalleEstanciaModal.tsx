@@ -9,6 +9,7 @@ import { estanciasRepository } from '../../../data/repositories/estancias.reposi
 import { pagoRepository } from '../../../data/repositories/pago.repository';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
 import { useCajaSesion } from '../../context/CajaSesionContext';
+import { useAuth } from '../../context/AuthContext';
 import { EnviarNotificacionModal } from './EnviarNotificacionModal';
 
 interface DetalleEstanciaModalProps {
@@ -21,6 +22,7 @@ interface DetalleEstanciaModalProps {
 
 export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, onRefreshList }: DetalleEstanciaModalProps) => {
   const { verificarCaja } = useCajaSesion();
+  const { usuario } = useAuth();
   const [loadingDeuda, setLoadingDeuda] = useState(true);
   const [totalPagos, setTotalPagos] = useState<number>(0);
   const [montoPago, setMontoPago] = useState('');
@@ -168,13 +170,15 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                 <AlertCircle className="h-3 w-3" /> Deuda acumulada
               </span>
             )}
-            <button
-              onClick={() => setIsNotificarOpen(true)}
-              className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer"
-              title="Enviar Notificación a Admin/Supervisor"
-            >
-              <Bell className="h-4.5 w-4.5" />
-            </button>
+            {usuario?.rol === 'recepcionista' && (
+              <button
+                onClick={() => setIsNotificarOpen(true)}
+                className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors cursor-pointer"
+                title="Enviar Notificación a Admin/Supervisor"
+              >
+                <Bell className="h-4.5 w-4.5" />
+              </button>
+            )}
             <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant cursor-pointer transition-colors">
               <X className="h-4.5 w-4.5" />
             </button>
