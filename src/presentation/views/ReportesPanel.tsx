@@ -33,6 +33,14 @@ interface PagoRegistro {
   fecha: string;
   estanciaId: string;
   huespedId: string;
+  estancia?: {
+    habitacion?: {
+      numero: string;
+    };
+  };
+  huesped?: {
+    nombre: string;
+  };
   sesionCaja?: {
     usuario?: {
       nombre: string;
@@ -482,8 +490,8 @@ export const ReportesPanel: React.FC = () => {
           html += `  <tr>`;
           html += `    <td class="table-cell-center">${new Date(p.fecha).toLocaleString()}</td>`;
           html += `    <td class="table-cell">${p.concepto || 'Abono de Hospedaje'}</td>`;
-          html += `    <td class="table-cell-center">Hab. ${p.estanciaId || 'S/N'}</td>`;
-          html += `    <td class="table-cell">Registrado</td>`;
+          html += `    <td class="table-cell-center">Hab. ${p.estancia?.habitacion?.numero || 'S/N'}</td>`;
+          html += `    <td class="table-cell" style="text-transform: capitalize;">${p.huesped?.nombre || 'Desconocido'}</td>`;
           html += `    <td class="table-cell-center" style="text-transform: uppercase;">${p.metodoPago}</td>`;
           html += `    <td class="table-cell">${p.sesionCaja?.usuario?.nombre || 'Recepción'}</td>`;
           html += `    <td class="table-cell-right">S/. ${Number(p.monto).toFixed(2)}</td>`;
