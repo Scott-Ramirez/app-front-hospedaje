@@ -228,18 +228,18 @@ export const HabitacionesCRUD: React.FC = () => {
                                         <td className="py-3.5 px-5 text-center">
                                             <div className="flex items-center justify-center gap-2">
                                                 
-                                                {/* 🌟 1. BOTÓN NOTIFICAR: Únicamente en filas de Habitación Ocupada */}
-                                                {room.estado === 'ocupado' && (
+                                                {/* 🌟 1. BOTÓN NOTIFICAR: Únicamente en filas de Habitación en LIMPIEZA */}
+                                                {room.estado === 'limpieza' && (
                                                     <button
                                                         onClick={() => setNotificarHabitacion(room.numero)}
-                                                        className="px-2.5 py-1.5 bg-primary/10 hover:bg-primary text-primary hover:text-on-primary border border-primary/30 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                                                        title="Notificar a Admin/Supervisor sobre esta habitación ocupada"
+                                                        className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
+                                                        title="Notificar a Admin/Supervisor sobre esta habitación en limpieza"
                                                     >
                                                         <Bell className="h-3.5 w-3.5" /> Notificar
                                                     </button>
                                                 )}
 
-                                                {/* 🌟 2. BOTÓN LIBERAR: Exclusivo para Administrador y Supervisor cuando la habitación está en Limpieza */}
+                                                {/* 🌟 2. BOTÓN LIBERAR: Exclusivo para Administrador y Supervisor cuando está en Limpieza */}
                                                 {room.estado === 'limpieza' && esAdminOSupervisor && (
                                                     <button
                                                         onClick={() => handleLiberar(room.id!, room.numero)}
@@ -250,12 +250,17 @@ export const HabitacionesCRUD: React.FC = () => {
                                                     </button>
                                                 )}
 
-                                                {/* 🌟 3. ACCIÓN MODIFICAR: Exclusiva para Admin y Supervisor (Deshabilitada/Oculta para Recepcionista) */}
-                                                {esAdminOSupervisor && (
+                                                {/* 🌟 3. ACCIÓN MODIFICAR: Habilitada para Admin/Supervisor, Deshabilitada para Recepcionista */}
+                                                {room.estado !== 'limpieza' && (
                                                     <button
-                                                        onClick={() => handleEditarClick(room)}
-                                                        className="p-1.5 bg-surface-container-high hover:bg-surface-container-highest text-on-surface rounded-md transition-colors cursor-pointer"
-                                                        title="Modificar parámetros de la habitación"
+                                                        onClick={() => esAdminOSupervisor && handleEditarClick(room)}
+                                                        disabled={!esAdminOSupervisor}
+                                                        className={`p-1.5 rounded-md transition-colors ${
+                                                            esAdminOSupervisor 
+                                                                ? 'bg-surface-container-high hover:bg-surface-container-highest text-on-surface cursor-pointer' 
+                                                                : 'bg-surface-container/60 text-on-surface-variant/40 border border-outline-variant/30 cursor-not-allowed'
+                                                        }`}
+                                                        title={esAdminOSupervisor ? "Modificar parámetros de la habitación" : "Edición deshabilitada para recepcionista"}
                                                     >
                                                         <Edit3 className="h-3.5 w-3.5" />
                                                     </button>
@@ -270,11 +275,6 @@ export const HabitacionesCRUD: React.FC = () => {
                                                     >
                                                         <Trash2 className="h-3.5 w-3.5" />
                                                     </button>
-                                                )}
-
-                                                {/* Si el recepcionista no tiene acciones en este estado (ej. disponible o limpieza), muestra un guión */}
-                                                {esRecepcionista && room.estado !== 'ocupado' && (
-                                                    <span className="text-xs text-on-surface-variant/40 italic">---</span>
                                                 )}
                                             </div>
                                         </td>
