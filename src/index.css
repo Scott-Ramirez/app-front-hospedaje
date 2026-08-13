@@ -190,4 +190,73 @@ input[type=number] {
     overflow-x: visible !important;
     overflow-y: visible !important;
   }
+
+  /* ─────────────────────────────────────────────────────────
+   * 📉 OPTIMIZACIONES DE ESPACIO PARA REDUCIR PÁGINAS PDF
+   * ─────────────────────────────────────────────────────────
+   */
+  
+  /* Forzar gráficos de barra lado a lado (2 columnas) en impresión */
+  .print-charts-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .print-charts-grid .print-card {
+    padding: 10px !important;
+  }
+
+  /* Compactar tamaño de los gráficos de barras en impresión */
+  .print-charts-grid svg {
+    max-height: 120px !important;
+    width: 100% !important;
+  }
+
+  /* Ocultar textos explicativos redundantes de los gráficos */
+  .print-charts-grid p {
+    display: none !important;
+  }
+
+  /* Forzar Top Huéspedes y Donuts lado a lado (4 columnas) en impresión */
+  .print-leaderboard-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-leaderboard-grid .lg\:col-span-2 {
+    grid-column: span 2 / span 2 !important;
+  }
+
+  .print-leaderboard-grid .print-card {
+    padding: 10px !important;
+  }
+
+  /* Reducir el tamaño de las donas SVG en impresión */
+  .print-leaderboard-grid svg {
+    max-height: 80px !important;
+    width: 100% !important;
+  }
+
+  /* Ocultar aclaración de fidelización para ahorrar espacio */
+  .print-leaderboard-grid p {
+    display: none !important;
+  }
+
+  /* Compactar KPIs */
+  .print-kpis-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .print-kpi {
+    padding: 10px !important;
+  }
+
+  .print-kpi h3 {
+    font-size: 16px !important;
+  }
 }
