@@ -96,10 +96,11 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
     return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
   };
 
-  const diasRealesHoy = getDiasSiCheckOutHoy();
-  const totalRealesHoy = diasRealesHoy * Number(estancia.habitacion?.precio || 0);
-  const deudaRealHoy = Number(Math.max(0, totalRealesHoy - totalPagos).toFixed(2));
-  const alDiaParaCheckOut = deudaRealHoy === 0;
+  const esFinalizado = estancia.estado === 'finalizado';
+  const diasRealesHoy = esFinalizado ? (estancia.noches || 1) : getDiasSiCheckOutHoy();
+  const totalRealesHoy = esFinalizado ? totalProgramado : (diasRealesHoy * Number(estancia.habitacion?.precio || 0));
+  const deudaRealHoy = esFinalizado ? 0 : Number(Math.max(0, totalRealesHoy - totalPagos).toFixed(2));
+  const alDiaParaCheckOut = esFinalizado || deudaRealHoy === 0;
 
   const handlePagarSaldo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,7 +153,11 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
           <div className="flex items-center gap-2 shrink-0">
             {/* Badge estado */}
-            {alDiaParaCheckOut ? (
+            {esFinalizado ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                <CheckCircle2 className="h-3 w-3" /> Estancia Finalizada
+              </span>
+            ) : alDiaParaCheckOut ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
                 <CheckCircle2 className="h-3 w-3" /> Habilitado Check-out
               </span>
@@ -254,7 +259,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                 </div>
 
                 {/* Simulación check-out temprano */}
-                {totalProgramado > totalRealesHoy && (
+                {!esFinalizado && totalProgramado > totalRealesHoy && (
                   <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-xs space-y-1 text-on-surface-variant">
                     <div className="flex items-center gap-1.5 font-bold text-primary">
                       <Clock className="h-3.5 w-3.5" />
@@ -270,7 +275,12 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                 )}
 
                 {/* Banner estado */}
-                {alDiaParaCheckOut ? (
+                {esFinalizado ? (
+                  <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3.5 py-2.5 text-xs text-emerald-700 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                    <span><strong>Estancia Concluida:</strong> La estadía finalizó correctamente y la cuenta se encuentra completamente liquidada.</span>
+                  </div>
+                ) : alDiaParaCheckOut ? (
                   <div className="flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3.5 py-2.5 text-xs text-emerald-700 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
                     <span><strong>¡Habilitado para check-out!</strong> El huésped está al día con los días transcurridos hasta hoy.</span>
