@@ -141,30 +141,87 @@ export const ReportesPanel: React.FC = () => {
     const egresosTotales = gastosPeriodo.reduce((sum, g) => sum + Number(g.monto), 0);
     const utilidadNeta = ingresosTotales - egresosTotales;
 
-    const clientelaMensual = Array(12).fill(0);
-    salidas.forEach(s => {
-      const d = new Date(s.fechaSalida);
-      if (d.getFullYear() === selectedYear) {
-        clientelaMensual[d.getMonth()] += 1;
+    let clientelaData: number[] = [];
+    let ingresosData: number[] = [];
+    let egresosData: number[] = [];
+    let labels: string[] = [];
+
+    if (selectedMonth === 'ALL') {
+      clientelaData = Array(12).fill(0);
+      ingresosData = Array(12).fill(0);
+      egresosData = Array(12).fill(0);
+      labels = NOMBRES_MESES_ABREV;
+
+      salidas.forEach(s => {
+        const d = new Date(s.fechaSalida);
+        if (d.getFullYear() === selectedYear) {
+          clientelaData[d.getMonth()] += 1;
+        }
+      });
+
+      pagos.forEach(p => {
+        const d = new Date(p.fecha);
+        if (d.getFullYear() === selectedYear) {
+          ingresosData[d.getMonth()] += Number(p.monto);
+        }
+      });
+
+      gastos.forEach(g => {
+        const d = new Date(g.fecha);
+        if (d.getFullYear() === selectedYear) {
+          egresosData[d.getMonth()] += Number(g.monto);
+        }
+      });
+    } else {
+      const mesIndex = parseInt(selectedMonth, 10);
+      const numDias = new Date(selectedYear, mesIndex + 1, 0).getDate();
+      clientelaData = Array(numDias).fill(0);
+      ingresosData = Array(numDias).fill(0);
+      egresosData = Array(numDias).fill(0);
+      labels = Array.from({ length: numDias }, (_, i) => (i + 1).toString());
+
+      salidas.forEach(s => {
+        const d = new Date(s.fechaSalida);
+        if (d.getFullYear() === selectedYear && d.getMonth() === mesIndex) {
+          clientelaData[d.getDate() - 1] += 1;
+        }
+      });
+
+      pagos.forEach(p => {
+        const d = new Date(p.fecha);
+        if (d.getFullYear() === selectedYear && d.getMonth() === mesIndex) {
+          ingresosData[d.getDate() - 1] += Number(p.monto);
+        }
+      });
+
+      gastos.forEach(g => {
+        const d = new Date(g.fecha);
+        if (d.getFullYear() === selectedYear && d.getMonth() === mesIndex) {
+          egresosData[d.getDate() - 1] += Number(g.monto);
+        }
+      });
+    }
+
+    const numElementos = selectedMonth === 'ALL' ? 12 : clientelaData.length;
+    const promedioIngreso = ingresosTotales / numElementos;
+    const promedioIngresoTexto = selectedMonth === 'ALL'
+      ? `Promedio mensual: S/. ${promedioIngreso.toFixed(2)}`
+      : `Promedio diario: S/. ${promedioIngreso.toFixed(2)}`;
+
+    let maxValorIndice = 0;
+    let maxValor = 0;
+    clientelaData.forEach((val, idx) => {
+      if (val > maxValor) {
+        maxValor = val;
+        maxValorIndice = idx;
       }
     });
 
-    const ingresosMensuales = Array(12).fill(0);
-    const egresosMensuales = Array(12).fill(0);
-
-    pagos.forEach(p => {
-      const d = new Date(p.fecha);
-      if (d.getFullYear() === selectedYear) {
-        ingresosMensuales[d.getMonth()] += Number(p.monto);
-      }
-    });
-
-    gastos.forEach(g => {
-      const d = new Date(g.fecha);
-      if (d.getFullYear() === selectedYear) {
-        egresosMensuales[d.getMonth()] += Number(g.monto);
-      }
-    });
+    const mayorDemandaTexto = maxValor > 0 
+      ? (selectedMonth === 'ALL'
+          ? `Mayor demanda: ${NOMBRES_MESES[maxValorIndice]} (${maxValor} check-outs)`
+          : `Mayor demanda: Día ${maxValorIndice + 1} (${maxValor} check-outs)`)
+      : 'Mayor demanda: Sin registros';
 
     const huespedMap: { [dni: string]: { nombre: string; dni: string; visitas: number; totalGastado: number } } = {};
     checkOutsPeriodo.forEach(s => {
@@ -200,9 +257,12 @@ export const ReportesPanel: React.FC = () => {
       ingresosTotales,
       egresosTotales,
       utilidadNeta,
-      clientelaMensual,
-      ingresosMensuales,
-      egresosMensuales,
+      clientelaData,
+      ingresosData,
+      egresosData,
+      labels,
+      promedioIngresoTexto,
+      mayorDemandaTexto,
       rankingHuespedes,
       metodosMap
     };
@@ -485,7 +545,7 @@ export const ReportesPanel: React.FC = () => {
           <div className="space-y-1">
             <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Check-outs Realizados</span>
             <h3 className="text-2xl font-black">{dataFiltrada.totalEstancias} estancias</h3>
-            <p className="text-[9px] text-on-surface-variant">Volumen de salidas registradas</p>
+            <p className="text-[9px] text-on-surface-variant font-medium">{dataFiltrada.mayorDemandaTexto}</p>
           </div>
         </div>
 
@@ -496,7 +556,7 @@ export const ReportesPanel: React.FC = () => {
               <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
               {dataFiltrada.ingresosTotales.toFixed(2)}
             </h3>
-            <p className="text-[9px] text-on-surface-variant">Abonos, adelantos y check-outs</p>
+            <p className="text-[9px] text-on-surface-variant font-medium">{dataFiltrada.promedioIngresoTexto}</p>
           </div>
         </div>
 
@@ -526,8 +586,11 @@ export const ReportesPanel: React.FC = () => {
       {/* GRÁFICOS ANALÍTICOS */}
       <ReportesGraficoBarras
         selectedYear={selectedYear}
-        dataFiltrada={dataFiltrada}
-        NOMBRES_MESES_ABREV={NOMBRES_MESES_ABREV}
+        selectedMonth={selectedMonth}
+        labels={dataFiltrada.labels}
+        clientelaData={dataFiltrada.clientelaData}
+        ingresosData={dataFiltrada.ingresosData}
+        egresosData={dataFiltrada.egresosData}
       />
 
       {/* LEADERBOARDS & TABLAS */}
