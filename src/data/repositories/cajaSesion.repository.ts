@@ -12,6 +12,9 @@ export interface CajaSesionResponse {
   descuadre?: number | null;
   estado: 'abierta' | 'cerrada';
   observaciones?: string | null;
+  conciliado: boolean;
+  conciliado_por?: string | null;
+  notas_conciliacion?: string | null;
   usuario?: {
     id: number;
     username: string;
@@ -49,6 +52,11 @@ export const cajaSesionRepository = {
 
   async listarPagos(): Promise<any[]> {
     const { data } = await api.get<any[]>('/caja-sesiones/pagos');
+    return data;
+  },
+
+  async conciliar(id: string, notas: string): Promise<CajaSesionResponse> {
+    const { data } = await api.patch<CajaSesionResponse>(`/caja-sesiones/${id}/conciliar`, { notas });
     return data;
   }
 };

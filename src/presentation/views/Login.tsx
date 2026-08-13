@@ -2,14 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { KeyRound, User, Hotel, Loader2, Sun, Moon } from 'lucide-react';
+import { KeyRound, User, Loader2, Sun, Moon } from 'lucide-react';
 import { AlertAdapter } from '../../core/adapters/alert.adapter';
+import logoRayzaLight from '../../assets/isotipo.png';
+import logoRayzaDark from '../../assets/isotipo-dark.png';
 
 export const Login = () => {
   const { login } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  
+
+  const logoRayza = isDarkMode ? logoRayzaDark : logoRayzaLight;
+
   // Estados del formulario
   const [username, setUsername] = useState('');
   const [clave, setClave] = useState('');
@@ -18,15 +22,17 @@ export const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!username.trim() || !clave.trim()) {
+    const usernameUpper = username.trim().toUpperCase();
+
+    if (!usernameUpper || !clave.trim()) {
       AlertAdapter.toast('Por favor, ingrese sus credenciales de acceso.', 'warning');
       return;
     }
 
     try {
       setCargando(true);
-      // Ejecuta la llamada al repositorio que ya mapea "password" a tu backend
-      await login(username, clave);
+      // Ejecuta la llamada al repositorio enviando el usuario en mayúsculas
+      await login(usernameUpper, clave);
       
       // ¡REDIRECCIÓN ACTIVA! Redirige al Dashboard y limpia el historial de login
       navigate('/dashboard', { replace: true });
@@ -52,17 +58,18 @@ export const Login = () => {
       </button>
 
       {/* Tarjeta del Formulario (Nivel 1 de Elevación Tonal) */}
-      <div className="w-full max-w-md rounded-lg bg-surface-lowest p-8 shadow-sm border border-outline-variant transition-colors duration-300">
+      <div className="w-full max-w-md rounded-2xl bg-surface-lowest p-8 shadow-lg border border-outline-variant transition-colors duration-300">
         
-        {/* Encabezado Institucional (Corporate Modern) */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-md bg-primary text-on-primary shadow-sm transition-colors">
-            <Hotel className="h-6 w-6" />
+        {/* Encabezado Institucional con Isotipo Oficial Adaptativo (Claro / Oscuro) */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="relative h-44 w-44 md:h-48 md:w-48 flex items-center justify-center p-1 mb-2">
+            <img 
+              src={logoRayza} 
+              alt="Hospedaje RAYZA Logo" 
+              className="h-full w-full object-contain filter drop-shadow-md transition-opacity duration-300" 
+            />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-on-surface tracking-tight font-sans">
-            Hospedaje RAYZA
-          </h2>
-          <span className="mt-1 text-xs font-medium tracking-widest text-on-surface-variant/70 uppercase">
+          <span className="text-xs font-semibold tracking-widest text-on-surface-variant/70 uppercase">
             Control de Recepción y Operaciones
           </span>
         </div>
@@ -80,10 +87,10 @@ export const Login = () => {
               <input
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => setUsername(e.target.value.toUpperCase())}
                 disabled={cargando}
-                placeholder="ej: nick"
-                className="w-full rounded-md border border-outline bg-surface-low py-2 pl-9 pr-3 text-sm text-on-surface placeholder-outline-variant outline-none transition-all focus:border-primary focus:bg-surface-lowest focus:ring-1 focus:ring-primary disabled:opacity-50"
+                placeholder="EJ: RECEPCION01"
+                className="w-full rounded-md border border-outline bg-surface-low py-2 pl-9 pr-3 text-sm text-on-surface placeholder-outline-variant outline-none transition-all focus:border-primary focus:bg-surface-lowest focus:ring-1 focus:ring-primary disabled:opacity-50 uppercase"
               />
             </div>
           </div>

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { ConfiguracionesRepository } from '../../data/repositories/configuraciones.repository';
 import type { ConfiguracionDTO } from '../../data/repositories/configuraciones.repository';
 import { AlertAdapter } from '../../core/adapters/alert.adapter';
-import { Wifi, Clock, Lock, Save, Edit2, RefreshCw, Loader2, Key, X } from 'lucide-react';
+import { Wifi, Clock, Lock, Save, Edit2, RefreshCw, Loader2, Key, X, ShieldAlert } from 'lucide-react';
 
 const configRepo = new ConfiguracionesRepository();
 
@@ -215,7 +215,7 @@ export const ConfiguracionesPanel: React.FC = () => {
       {/* Aviso de restricción */}
       {esSupervisor && (
         <div className="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-lg text-xs font-medium flex items-center gap-2">
-          <span>⚠️</span>
+          <ShieldAlert className="h-4 w-4 shrink-0" />
           <span>Nivel de acceso limitado: Como supervisor, solo tienes autorización para editar los parámetros de red Wifi.</span>
         </div>
       )}

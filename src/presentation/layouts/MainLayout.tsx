@@ -7,6 +7,13 @@ import { NotificationBell } from '../components/shared/NotificationBell';
 import { CierreCajaModal } from '../components/shared/CierreCajaModal';
 import { SolicitudEgresoModal } from '../components/recepcion/SolicitudEgresoModal';
 import { SolicitudesEgresoPanel } from '../components/shared/SolicitudesEgresoPanel';
+import { useNotifications } from '../context/NotificationContext';
+
+import sidebarLogoLight from '../../assets/sidebar-logo-light.png';
+import sidebarLogoDark from '../../assets/sidebar-logo-dark.png';
+import isotipoLight from '../../assets/isotipo.png';
+import isotipoDark from '../../assets/isotipo-dark.png';
+
 import { 
   LayoutDashboard, 
   CalendarDays, 
@@ -17,26 +24,33 @@ import {
   Sun, 
   Moon, 
   LogOut,
-  Menu,
   ChevronLeft,
+  ChevronDown,
   UserCog,
   Wallet,
   Receipt,
-  BarChart3
+  BarChart3,
+  Inbox
 } from 'lucide-react';
 
 export const MainLayout = () => {
   const { usuario, logout } = useAuth(); 
   const { isDarkMode, toggleTheme } = useTheme();
   const { cajaActiva } = useCajaSesion();
+  const { conteoNoLeidas } = useNotifications();
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Estado para controlar el colapso del Sidebar
+  // Selección de Logos adaptativos según el Tema (Modo Claro vs Modo Oscuro)
+  const sidebarLogo = isDarkMode ? sidebarLogoDark : sidebarLogoLight;
+  const isotipoLogo = isDarkMode ? isotipoDark : isotipoLight;
+
+  // Estado para controlar el colapso del Sidebar y Modales
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isSolicitudEgresoOpen, setIsSolicitudEgresoOpen] = useState(false);
   const [isPanelEgresoOpen, setIsPanelEgresoOpen] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
 
   const activeRoute = location.pathname;
 
@@ -46,8 +60,9 @@ export const MainLayout = () => {
     { label: 'Habitaciones', path: '/habitaciones', icon: <BedDouble className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Huéspedes', path: '/huespedes', icon: <Users className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Historial', path: '/historial', icon: <History className="h-5 w-5 flex-shrink-0" /> },
-    ...(usuario?.rol === 'admin' || usuario?.rol === 'supervisor' ? [{ label: 'Reportes', path: '/reportes', icon: <BarChart3 className="h-5 w-5 flex-shrink-0 text-primary" /> }] : []),
-    ...(usuario?.rol === 'admin' ? [{ label: 'Personal', path: '/usuarios', icon: <UserCog className="h-5 w-5 flex-shrink-0 text-amber-500" /> }] : []),
+    { label: 'Bandeja', path: '/bandeja', icon: <Inbox className="h-5 w-5 flex-shrink-0" /> },
+    ...(usuario?.rol === 'admin' || usuario?.rol === 'supervisor' ? [{ label: 'Reportes', path: '/reportes', icon: <BarChart3 className="h-5 w-5 flex-shrink-0" /> }] : []),
+    ...(usuario?.rol === 'admin' ? [{ label: 'Personal', path: '/usuarios', icon: <UserCog className="h-5 w-5 flex-shrink-0" /> }] : []),
   ];
 
   const handleLogout = () => {
@@ -64,25 +79,32 @@ export const MainLayout = () => {
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        {/* Cabecera del Sidebar */}
-        <div className={`px-6 mb-8 flex items-center justify-between ${isCollapsed ? 'justify-center px-2' : ''}`}>
-          {!isCollapsed && (
-            <div className="animate-fade-in duration-200">
-              <h1 className="text-xl font-bold tracking-tight text-primary whitespace-nowrap">
-                Hospedaje RAYZA
-              </h1>
-              <p className="text-[10px] font-medium text-on-surface-variant uppercase tracking-wider mt-0.5 whitespace-nowrap">
-                Panel de Operaciones
-              </p>
+        {/* Cabecera del Sidebar con Imagen Adaptativa Aumentada */}
+        <div className={`px-4 mb-6 flex items-center justify-between min-h-[56px] ${isCollapsed ? 'justify-center px-1' : ''}`}>
+          {!isCollapsed ? (
+            <div className="flex items-center gap-2 overflow-hidden animate-fade-in duration-200 py-1">
+              <img 
+                src={sidebarLogo} 
+                alt="Hospedaje RAYZA" 
+                className="h-14 md:h-16 max-w-[195px] object-contain filter drop-shadow-sm transition-all duration-300" 
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center animate-fade-in duration-200 cursor-pointer p-0.5" title="Expandir menú" onClick={() => setIsCollapsed(false)}>
+              <img 
+                src={isotipoLogo} 
+                alt="RAYZA" 
+                className="h-14 w-14 md:h-16 md:w-16 object-contain filter drop-shadow-sm transition-all duration-300" 
+              />
             </div>
           )}
           
           <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`p-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer ${isCollapsed ? 'mx-auto' : ''}`}
-            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+            className={`p-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer shrink-0 ${isCollapsed ? 'hidden' : 'ml-1'}`}
+            title="Colapsar menú"
           >
-            {isCollapsed ? <Menu className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+            <ChevronLeft className="h-5 w-5" />
           </button>
         </div>
 
@@ -95,98 +117,38 @@ export const MainLayout = () => {
                 key={item.path}
                 to={item.path}
                 title={isCollapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 group ${
+                className={`flex items-center justify-between px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 group relative ${
                   isActive
                     ? 'text-primary font-bold border-r-4 border-primary bg-primary-container/10'
                     : 'text-on-surface-variant hover:bg-surface-container-high'
                 } ${isCollapsed ? 'justify-center px-2' : ''}`}
               >
-                {item.icon}
-                {!isCollapsed && <span className="animate-fade-in duration-200 whitespace-nowrap">{item.label}</span>}
+                <div className="flex items-center gap-3 animate-fade-in duration-200">
+                  {item.icon}
+                  {!isCollapsed && <span className="whitespace-nowrap">{item.label}</span>}
+                </div>
+                {item.path === '/bandeja' && conteoNoLeidas > 0 && (
+                  isCollapsed ? (
+                    <span className="absolute top-2 right-2 h-2 w-2 bg-error rounded-full ring-1 ring-surface-container-lowest animate-pulse" />
+                  ) : (
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-error text-white rounded-full leading-none scale-90">
+                      {conteoNoLeidas}
+                    </span>
+                  )
+                )}
               </Link>
             );
           })}
-        </nav>
-
-        {/* Pie del Sidebar */}
-        <div className="mt-auto px-3 pt-4 border-t border-outline-variant space-y-1">
-          <Link
-            to="/configuraciones"
-            title={isCollapsed ? "Configuración" : undefined}
-            className={`flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
-              activeRoute === '/configuraciones'
-                ? 'text-primary font-bold border-r-4 border-primary bg-primary-container/10'
-                : 'text-on-surface-variant hover:bg-surface-container-high'
-            } ${isCollapsed ? 'justify-center px-2' : ''}`}
-          >
-            <Settings className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="animate-fade-in duration-200 whitespace-nowrap">Configuración</span>}
-          </Link>
-
-          {/* Botón Solicitar Egreso (solo recepcionistas con caja activa) */}
-          {usuario?.rol === 'recepcionista' && cajaActiva && (
-            <button
-              onClick={() => setIsSolicitudEgresoOpen(true)}
-              title={isCollapsed ? 'Solicitar Egreso de Caja' : undefined}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium text-primary hover:bg-primary/10 transition-all duration-200 text-left cursor-pointer ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-            >
-              <Receipt className="h-5 w-5 flex-shrink-0 text-primary" />
-              {!isCollapsed && <span className="animate-fade-in duration-200 whitespace-nowrap font-bold">Solicitar Egreso</span>}
-            </button>
+        </nav>        {/* Pie del Sidebar */}
+        <div className="mt-auto px-3 pt-3 pb-1 text-center select-none border-t border-outline-variant/40">
+          <span className={`inline-block px-2.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/60 text-[9px] font-bold tracking-wider text-primary ${isCollapsed ? 'scale-90' : ''}`}>
+            {import.meta.env.VITE_APP_VERSION || '1.0.0'}
+          </span>
+          {!isCollapsed && (
+            <p className="text-[10px] text-on-surface-variant/60 font-medium mt-1.5">
+              Desarrollado por <span className="font-semibold text-on-surface-variant">Scott Ramirez</span>
+            </p>
           )}
-
-          {/* Panel de solicitudes de egreso (admin y supervisor) */}
-          {(usuario?.rol === 'admin' || usuario?.rol === 'supervisor') && (
-            <button
-              onClick={() => setIsPanelEgresoOpen(true)}
-              title={isCollapsed ? 'Solicitudes de Egreso' : undefined}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium text-primary hover:bg-primary/10 transition-all duration-200 text-left cursor-pointer ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-            >
-              <Receipt className="h-5 w-5 flex-shrink-0 text-primary" />
-              {!isCollapsed && <span className="animate-fade-in duration-200 whitespace-nowrap font-bold">Egresos Pendientes</span>}
-            </button>
-          )}
-
-          {/* Botón de Cierre de Caja (Condicionado por sesión activa) */}
-          {cajaActiva && (
-            <button
-              onClick={() => setIsCierreModalOpen(true)}
-              title={isCollapsed ? "Cerrar Caja / Turno" : undefined}
-              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium text-amber-500 hover:bg-amber-500/10 transition-all duration-200 text-left cursor-pointer ${
-                isCollapsed ? 'justify-center px-2' : ''
-              }`}
-            >
-              <Wallet className="h-5 w-5 flex-shrink-0 text-amber-500" />
-              {!isCollapsed && <span className="animate-fade-in duration-200 whitespace-nowrap text-amber-600 dark:text-amber-500 font-bold">Cerrar Caja / Turno</span>}
-            </button>
-          )}
-
-          <button
-            onClick={handleLogout}
-            title={isCollapsed ? "Cerrar Sesión" : undefined}
-            className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-md text-sm font-medium text-error hover:bg-error-container/20 transition-all duration-200 text-left cursor-pointer ${
-              isCollapsed ? 'justify-center px-2' : ''
-            }`}
-          >
-            <LogOut className="h-5 w-5 flex-shrink-0" />
-            {!isCollapsed && <span className="animate-fade-in duration-200 whitespace-nowrap font-bold">Cerrar Sesión</span>}
-          </button>
-
-          {/* Footer de Versión e Información dentro del Sidebar */}
-          <div className="pt-3 pb-1 text-center select-none border-t border-outline-variant/30 mt-2">
-            <span className={`inline-block px-2.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/60 text-[9px] font-bold tracking-wider text-primary ${isCollapsed ? 'scale-90' : ''}`}>
-              {import.meta.env.VITE_APP_VERSION || '1.0.0'}
-            </span>
-            {!isCollapsed && (
-              <p className="text-[9px] text-on-surface-variant/50 font-medium mt-1">
-                Hospedaje RAYZA © {new Date().getFullYear()}
-              </p>
-            )}
-          </div>
         </div>
       </aside>
 
@@ -212,19 +174,106 @@ export const MainLayout = () => {
 
           <div className="h-6 w-[1px] bg-outline-variant mx-2" />
 
-          {/* Perfil */}
-          <div className="flex items-center gap-3 pl-2">
-            <div className="h-8 w-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm border border-outline-variant uppercase">
-              {usuario?.username?.substring(0, 2) || 'RX'}
-            </div>
-            <div className="text-left hidden sm:block">
-              <p className="text-xs font-bold leading-none text-on-surface">
-                {usuario?.nombre || 'Terminal Activo'}
-              </p>
-              <p className="text-[11px] font-medium text-on-surface-variant uppercase tracking-wider mt-0.5">
-                {usuario?.rol || 'Recepcionista'}
-              </p>
-            </div>
+          {/* Perfil con Dropdown */}
+          <div className="relative pl-2">
+            <button
+              onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+              className="flex items-center gap-2.5 p-1.5 rounded-lg hover:bg-surface-container-high transition-colors cursor-pointer outline-none"
+            >
+              <div className="h-8 w-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-bold text-sm border border-outline-variant uppercase shadow-sm">
+                {usuario?.username?.substring(0, 2) || 'RX'}
+              </div>
+              <div className="text-left hidden sm:block">
+                <p className="text-xs font-bold leading-none text-on-surface">
+                  {usuario?.nombre || 'Terminal Activo'}
+                </p>
+                <p className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider mt-0.5">
+                  {usuario?.rol || 'Recepcionista'}
+                </p>
+              </div>
+              <ChevronDown className={`h-4 w-4 text-on-surface-variant transition-transform duration-200 ${isUserDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Menú Desplegable Estilizado */}
+            {isUserDropdownOpen && (
+              <>
+                {/* Backdrop invisible para cerrar al hacer clic afuera */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setIsUserDropdownOpen(false)} 
+                />
+
+                <div className="absolute right-0 mt-2 w-56 rounded-xl bg-surface border border-outline-variant shadow-2xl z-50 overflow-hidden animate-fade-in duration-150 p-1.5 space-y-0.5">
+                  {(usuario?.rol === 'admin' || usuario?.rol === 'supervisor') && (
+                    <button
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        navigate('/configuraciones');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-colors cursor-pointer text-left"
+                    >
+                      <Settings className="h-4 w-4 text-primary" />
+                      <span>Configuración</span>
+                    </button>
+                  )}
+
+                  {/* Panel de Egresos (Para todos los roles, con nombre dinámico) */}
+                  {usuario && (
+                    <button
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        setIsPanelEgresoOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-colors cursor-pointer text-left"
+                    >
+                      <Receipt className="h-4 w-4 text-primary" />
+                      <span>{usuario.rol === 'recepcionista' ? 'Mis Solicitudes de Egreso' : 'Egresos Pendientes'}</span>
+                    </button>
+                  )}
+
+                  {/* Solicitar Egreso de Caja (Recepcionista con caja activa) */}
+                  {usuario?.rol === 'recepcionista' && cajaActiva && (
+                    <button
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        setIsSolicitudEgresoOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded-lg transition-colors cursor-pointer text-left"
+                    >
+                      <Receipt className="h-4 w-4 text-primary" />
+                      <span>Solicitar Egreso (Paso 1)</span>
+                    </button>
+                  )}
+
+                  {/* Cerrar Caja / Turno (Si hay sesión activa) */}
+                  {cajaActiva && (
+                    <button
+                      onClick={() => {
+                        setIsUserDropdownOpen(false);
+                        setIsCierreModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-amber-600 dark:text-amber-500 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer text-left"
+                    >
+                      <Wallet className="h-4 w-4 text-amber-500" />
+                      <span>Cerrar Caja / Turno</span>
+                    </button>
+                  )}
+
+                  <div className="my-1 border-t border-outline-variant/60" />
+
+                  <button
+                    onClick={() => {
+                      setIsUserDropdownOpen(false);
+                      handleLogout();
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="h-4 w-4 text-red-500" />
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

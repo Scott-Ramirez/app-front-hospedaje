@@ -48,7 +48,7 @@ api.interceptors.response.use(
 
     const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.message?.toLowerCase().includes('network error');
     const isServerError = error.response && error.response.status >= 500;
-    const isTokenExpired = error.response && (error.response.status === 401 || error.response.status === 403) && !window.location.pathname.includes('/login');
+    const isTokenExpired = error.response && error.response.status === 401 && !window.location.pathname.includes('/login');
 
     if (isNetworkError) {
       if (errorCallback) {

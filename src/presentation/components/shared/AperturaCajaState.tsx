@@ -138,10 +138,10 @@ export const AperturaCajaState: React.FC = () => {
             }`}>
               <span>
                 {Math.abs(diferencia) < 0.01
-                  ? '✓ Monto coincide con el turno anterior'
+                  ? 'Monto coincide con el turno anterior'
                   : diferencia < 0
-                  ? `⚠ Faltante vs. turno anterior`
-                  : `⚠ Sobrante vs. turno anterior`}
+                  ? `Faltante vs. turno anterior`
+                  : `Sobrante vs. turno anterior`}
               </span>
               {Math.abs(diferencia) >= 0.01 && (
                 <span className="font-mono font-black ml-2">

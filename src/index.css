@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
+/* 
+ * ====================================================================
+ * 🔤 CONFIGURACIÓN DE FUENTES DEL SISTEMA (HOSPEDAJE RAYZA)
+ * ====================================================================
+ * Para cambiar la fuente de TODA la aplicación de forma fácil y rápida,
+ * solo cambia el valor de '--app-font' eligiendo una de las opciones:
+ * 
+ *  • var(--font-jakarta) -> 'Plus Jakarta Sans' (ACTIVA - Moderna, ultra-limpia y elegante)
+ *  • var(--font-outfit)  -> 'Outfit' (Vanguardista y fresca)
+ *  • var(--font-inter)   -> 'Inter' (Clásica e industrial)
+ *  • var(--font-poppins) -> 'Poppins' (Geométrica y amigable)
+ * ====================================================================
+ */
+:root {
+  --font-jakarta: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-outfit: 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-poppins: 'Poppins', system-ui, -apple-system, sans-serif;
+
+  /* 🎯 CAMBIA LA FUENTE ACTIVA AQUÍ: */
+  --app-font: var(--font-jakarta);
+}
+
 @theme {
-  /* Fuentes */
-  --font-sans: 'Inter', sans-serif;
+  /* Fuente Sans activa en Tailwind */
+  --font-sans: var(--app-font);
 
   /* Redondeados personalizados */
   --radius-sm: 0.25rem;

@@ -286,7 +286,7 @@ export const UsuariosPanel: React.FC = () => {
             <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
               <div>
                 <h3 className="text-lg font-bold text-primary">Registrar Nuevo Empleado</h3>
-                <p className="text-xs text-on-surface-variant">Los nuevos ingresos tendrán cambio de clave obligatorio.</p>
+                <p className="text-xs text-on-surface-variant">El usuario utilizará la clave asignada para iniciar sesión.</p>
               </div>
               <button
                 onClick={() => setShowRegModal(false)}
@@ -302,10 +302,10 @@ export const UsuariosPanel: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ej. María Torres"
-                  className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  placeholder="Ej. MARÍA TORRES"
+                  className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase"
                   value={regForm.nombre}
-                  onChange={(e) => setRegForm({ ...regForm, nombre: e.target.value })}
+                  onChange={(e) => setRegForm({ ...regForm, nombre: e.target.value.toUpperCase() })}
                 />
               </div>
 
@@ -314,15 +314,15 @@ export const UsuariosPanel: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="Ej. recepcion01"
-                  className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                  placeholder="Ej. RECEPCION01"
+                  className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all uppercase"
                   value={regForm.username}
-                  onChange={(e) => setRegForm({ ...regForm, username: e.target.value })}
+                  onChange={(e) => setRegForm({ ...regForm, username: e.target.value.toUpperCase() })}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase">Contraseña Temporal Inicial</label>
+                <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase">Contraseña de Acceso</label>
                 <input
                   type="text"
                   required
@@ -376,7 +376,7 @@ export const UsuariosPanel: React.FC = () => {
             <div className="px-6 py-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest">
               <div>
                 <h3 className="text-lg font-bold text-primary">Restablecer Contraseña</h3>
-                <p className="text-xs text-on-surface-variant">Genera una clave temporal para '{resetUsername}'.</p>
+                <p className="text-xs text-on-surface-variant">Asigna una nueva contraseña de acceso para '{resetUsername}'.</p>
               </div>
               <button
                 onClick={() => setShowResetModal(false)}
@@ -389,11 +389,11 @@ export const UsuariosPanel: React.FC = () => {
             <form onSubmit={handleResetSubmit} className="p-6 space-y-4">
               <div className="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-lg text-xs flex gap-2">
                 <ShieldAlert className="h-5 w-5 shrink-0" />
-                <span>Esta acción inyectará una clave temporal obligatoria. El usuario será forzado a cambiarla en su siguiente inicio de sesión.</span>
+                <span>Esta acción actualizará la contraseña del usuario. El usuario podrá iniciar sesión inmediatamente con esta nueva clave.</span>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase">Nueva Clave Temporal</label>
+                <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase">Nueva Contraseña</label>
                 <input
                   type="text"
                   required

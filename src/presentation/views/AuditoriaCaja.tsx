@@ -1,14 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { cajaSesionRepository } from '../../data/repositories/cajaSesion.repository';
 import type { CajaSesionResponse } from '../../data/repositories/cajaSesion.repository';
-import { Wallet, Loader2, ArrowLeft, ArrowRight, User } from 'lucide-react';
+import { Wallet, Loader2, ArrowLeft, ArrowRight, User, X, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { AlertAdapter } from '../../core/adapters/alert.adapter';
 
 export const AuditoriaCaja: React.FC = () => {
+  const { usuario } = useAuth();
+  const esAdminOSupervisor = usuario?.rol === 'admin' || usuario?.rol === 'supervisor';
+
   const [turnos, setTurnos] = useState<CajaSesionResponse[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+
+  // Estados para modal de conciliación
+  const [selectedConciliarId, setSelectedConciliarId] = useState<string | null>(null);
+  const [notasConciliacion, setNotasConciliacion] = useState('');
+  const [savingConciliacion, setSavingConciliacion] = useState(false);
 
   const limit = 10;
 
@@ -31,8 +41,26 @@ export const AuditoriaCaja: React.FC = () => {
 
   const totalPages = Math.ceil(total / limit);
 
+  const handleConciliar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedConciliarId || !notasConciliacion.trim()) return;
+
+    try {
+      setSavingConciliacion(true);
+      await cajaSesionRepository.conciliar(selectedConciliarId, notasConciliacion.trim());
+      AlertAdapter.success('Éxito', 'El descuadre de caja ha sido conciliado correctamente.');
+      setSelectedConciliarId(null);
+      setNotasConciliacion('');
+      fetchTurnos();
+    } catch (err: any) {
+      AlertAdapter.error('Error', err?.response?.data?.message || 'No se pudo conciliar el descuadre.');
+    } finally {
+      setSavingConciliacion(false);
+    }
+  };
+
   return (
-    <div className="p-6 max-w-[1200px] mx-auto text-on-surface space-y-6 select-none">
+    <div className="p-6 max-w-[1200px] mx-auto text-on-surface space-y-6 select-none animate-fade-in">
       
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -44,7 +72,7 @@ export const AuditoriaCaja: React.FC = () => {
             <h2 className="text-xl font-bold tracking-tight">Auditoría de Turnos y Caja</h2>
           </div>
           <p className="text-xs text-on-surface-variant leading-relaxed">
-            Consulte y audite las aperturas, cierres y descuadres de caja declarados por el personal de recepción.
+            Consulte y audite las aperturas, cierres, descuadres y conciliaciones de caja del personal de recepción.
           </p>
         </div>
       </div>
@@ -83,11 +111,16 @@ export const AuditoriaCaja: React.FC = () => {
                     <th className="p-4 text-right">Entregado</th>
                     <th className="p-4 text-right">Arqueo (Descuadre)</th>
                     <th className="p-4">Estado</th>
+                    <th className="p-4 text-center">Acciones / Auditoría</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/35 font-medium">
                   {turnos.map((t) => {
                     const descVal = Number(t.descuadre || 0);
+                    const esCerrada = t.estado === 'cerrada';
+                    const tieneDescuadre = esCerrada && Math.abs(descVal) >= 0.01;
+                    const esConciliado = t.conciliado;
+
                     return (
                       <tr key={t.id} className="hover:bg-surface-container-lowest/40 transition-colors">
                         {/* Operador */}
@@ -136,12 +169,12 @@ export const AuditoriaCaja: React.FC = () => {
 
                         {/* Descuadre Arqueo */}
                         <td className="p-4 text-right">
-                          {t.estado === 'cerrada' ? (
+                          {esCerrada ? (
                             <span className={`inline-block px-2.5 py-0.5 rounded-full font-mono font-black text-[11px] ${
                               Math.abs(descVal) < 0.01
                                 ? 'bg-green-500/10 text-green-600'
                                 : descVal < 0
-                                ? 'bg-error/10 text-error'
+                                ? 'bg-error/10 text-error animate-pulse'
                                 : 'bg-amber-500/10 text-amber-600'
                             }`}>
                               {descVal >= 0 ? '+' : ''}{descVal.toFixed(2)}
@@ -153,13 +186,52 @@ export const AuditoriaCaja: React.FC = () => {
 
                         {/* Estado */}
                         <td className="p-4">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                            t.estado === 'abierta'
-                              ? 'bg-primary/10 text-primary'
-                              : 'bg-surface-container-high text-on-surface-variant border border-outline-variant/60'
-                          }`}>
-                            {t.estado}
-                          </span>
+                          {t.estado === 'abierta' ? (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary">
+                              Activa (Abierta)
+                            </span>
+                          ) : !tieneDescuadre ? (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/10 text-green-600 border border-green-500/20">
+                              Cuadrado
+                            </span>
+                          ) : esConciliado ? (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-600 border border-sky-500/20" title={`Conciliado por ${t.conciliado_por}`}>
+                              Conciliado
+                            </span>
+                          ) : (
+                            <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-600 border border-red-500/20">
+                              No Conciliado
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Acciones / Auditoría */}
+                        <td className="p-4 text-center">
+                          {esCerrada && tieneDescuadre ? (
+                            !esConciliado ? (
+                              esAdminOSupervisor ? (
+                                <button
+                                  onClick={() => setSelectedConciliarId(t.id)}
+                                  className="px-2.5 py-1 bg-red-600 text-white hover:bg-red-700 active:scale-[0.98] text-[10px] font-bold rounded-lg transition-all cursor-pointer shadow-xs"
+                                >
+                                  Conciliar
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-red-500/80 font-bold flex items-center justify-center gap-1">
+                                  <AlertCircle className="h-3 w-3" /> Pendiente Admin
+                                </span>
+                              )
+                            ) : (
+                              <div 
+                                className="text-[10px] text-on-surface-variant font-medium max-w-[160px] truncate mx-auto bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant/40"
+                                title={`Notas: "${t.notas_conciliacion}" (Aprobado por: ${t.conciliado_por})`}
+                              >
+                                <span className="font-bold text-sky-600">Ajustado:</span> {t.notas_conciliacion}
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-on-surface-variant/40 font-mono">-</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -215,6 +287,76 @@ export const AuditoriaCaja: React.FC = () => {
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Modal de Conciliación de Descuadre */}
+      {selectedConciliarId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-surface text-on-surface w-full max-w-md rounded-3xl shadow-2xl border border-outline-variant/60 overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/40 bg-surface-container-low">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-primary" />
+                <h3 className="font-black text-sm text-on-surface">Conciliar Descuadre de Caja</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedConciliarId(null)}
+                className="h-8 w-8 rounded-lg hover:bg-surface-container-high flex items-center justify-center cursor-pointer transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Body */}
+            <form onSubmit={handleConciliar} className="p-6 space-y-4">
+              <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl p-3.5 text-xs text-amber-600 dark:text-amber-400 flex gap-2.5 items-start">
+                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
+                <div>
+                  <p className="font-bold">Acción de Auditoría:</p>
+                  <p className="mt-0.5 leading-relaxed">
+                    Al confirmar, registrarás que revisaste este turno y el descuadre contable quedará aclarado. Debes justificar el ajuste.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                  Notas de Ajuste / Justificación
+                </label>
+                <textarea
+                  required
+                  placeholder="Ej. Faltante aclarado. El recepcionista cometió un error de digitación al ingresar un cobro. No hay pérdida real de efectivo."
+                  className="bg-surface-container-low border border-outline-variant rounded-xl px-4 py-2.5 text-xs text-on-surface outline-none focus:ring-2 focus:ring-primary/20 min-h-[100px] resize-none font-medium"
+                  value={notasConciliacion}
+                  onChange={(e) => setNotasConciliacion(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedConciliarId(null)}
+                  className="flex-1 py-2.5 bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high text-xs font-bold rounded-xl transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingConciliacion || !notasConciliacion.trim()}
+                  className="flex-1 py-2.5 bg-primary text-on-primary text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                >
+                  {savingConciliacion ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    'Confirmar Conciliación'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

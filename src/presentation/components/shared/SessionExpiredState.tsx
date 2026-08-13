@@ -53,7 +53,7 @@ export const SessionExpiredState: React.FC<SessionExpiredStateProps> = ({ onRedi
 
           {/* Nota Informativa sobre la data */}
           <div className="w-full bg-amber-500/5 border border-amber-500/10 px-4 py-3 rounded-xl mb-6 text-left flex items-start gap-3">
-            <span className="text-base select-none">🛡️</span>
+            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
             <p className="text-xs text-on-surface-variant leading-relaxed">
               <strong>Resguardo de datos:</strong> Todos los cambios confirmados previamente en el inventario, reservas o caja se encuentran almacenados de manera segura en el servidor central.
             </p>

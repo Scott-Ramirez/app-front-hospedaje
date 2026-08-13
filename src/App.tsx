@@ -18,6 +18,7 @@ import { EstanciasActivas } from './presentation/views/EstanciasActivas'; // ðŸŒ
 import { UsuariosPanel } from './presentation/views/UsuariosPanel';
 import { AuditoriaCaja } from './presentation/views/AuditoriaCaja';
 import { ReportesPanel } from './presentation/views/ReportesPanel';
+import { BandejaNotificaciones } from './presentation/views/BandejaNotificaciones';
 
 // Importaciones de Filtros de Seguridad / Guards de SesiÃ³n
 import { ProtectedRoute } from './presentation/components/guards/ProtectedRoute';
@@ -77,6 +78,7 @@ function App() {
                   <Route path="/habitaciones" element={<HabitacionesCRUD />} />
                   <Route path="/huespedes" element={<HuespedesCRUD />} /> 
                   <Route path="/historial" element={<HistorialSalidas />} />
+                  <Route path="/bandeja" element={<BandejaNotificaciones />} />
                 </Route>
                 
               </Route>

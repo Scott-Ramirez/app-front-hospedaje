@@ -10,8 +10,10 @@ export interface HuespedPorDesocupar {
   estanciaId: string;
   habitacionNumero: string;
   huespedNombre: string;
+  huespedDni?: string;
   fechaSalidaProgramada: string;
   montoPendienteAproximado: number;
+  estaVencida: boolean;
 }
 
 export interface DashboardViewData {
@@ -47,19 +49,28 @@ export const useDashboard = () => {
                              (dashboardRes.resumen.habitacionesOcupadas || 0) + 
                              (dashboardRes.resumen.habitacionesEnLimpieza || 0);
 
-            // Mapear alertas
-            const totalVencidas = estanciasRes.data.filter(e => e.estaVencida === true).length;
-
-            const hoy = new Date().toDateString();
-            const huespedesPorDesocupar = estanciasRes.data
-                .filter(e => new Date(e.fecha_salida_programada).toDateString() === hoy)
-                .map(e => ({
+            const estanciasConEstado = estanciasRes.data.map((e: any) => {
+                const precio = Number(e.habitacion?.precio || 0);
+                const montoAcum = Number(e.montoAcumulado ?? 0);
+                const pagado = Number(e.total_pagar || 0);
+                // Calcular deuda pendiente igual que el backend: max(0, acum - pagado)
+                const montoPendiente = Math.max(0, montoAcum - pagado);
+                // Confiar en el backend para estaVencida — ya calcula correctamente
+                // si el huésped está al día (pagó sus días programados → false)
+                const estaVencida = Boolean(e.estaVencida) && montoPendiente > 0;
+                return {
                     estanciaId: e.id,
                     habitacionNumero: e.habitacion?.numero || '---',
                     huespedNombre: e.huesped?.nombre || 'Huésped Anónimo',
+                    huespedDni: e.huesped?.dni || '',
                     fechaSalidaProgramada: e.fecha_salida_programada,
-                    montoPendienteAproximado: e.total_pagar || 0
-                }));
+                    montoPendienteAproximado: montoPendiente,
+                    estaVencida,
+                    precio
+                };
+            });
+
+            const totalVencidas = estanciasConEstado.filter(e => e.estaVencida).length;
 
             setData({
                 resumen: {
@@ -70,7 +81,7 @@ export const useDashboard = () => {
                 },
                 alertas: {
                     totalVencidas,
-                    huespedesPorDesocupar
+                    huespedesPorDesocupar: estanciasConEstado
                 }
             });
         } catch (err: any) {
