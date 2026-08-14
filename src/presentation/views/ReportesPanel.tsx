@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../../data/adapters/api.adapter';
 import { 
@@ -131,13 +131,20 @@ export const ReportesPanel: React.FC = () => {
     }
   };
 
+  const hasShownToastRef = useRef(false);
+
   useEffect(() => {
     fetchReportData();
   }, []);
 
   useEffect(() => {
-    if (!isCollapsed && !loading) {
+    // Si el sidebar ESTÁ MINIMIZADO (isCollapsed === true), NO mostrar la alerta
+    if (isCollapsed) return;
+
+    // Solo mostrar la alerta si el sidebar está expandido, ya cargaron los datos y no se ha mostrado aún
+    if (!loading && !hasShownToastRef.current) {
       AlertAdapter.toast('Sugerimos minimizar el menú lateral para una mejor vista', 'info');
+      hasShownToastRef.current = true;
     }
   }, [isCollapsed, loading]);
 
