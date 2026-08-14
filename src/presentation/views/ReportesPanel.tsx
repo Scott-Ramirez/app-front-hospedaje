@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { api } from '../../data/adapters/api.adapter';
 import { 
   BarChart3, 
@@ -6,9 +7,7 @@ import {
   FileText, 
   RefreshCw, 
   Loader2, 
-  AlertTriangle,
-  PanelLeftClose,
-  X
+  AlertTriangle
 } from 'lucide-react';
 import { SolesIcon } from '../components/shared/SolesIcon';
 import { AlertAdapter } from '../../core/adapters/alert.adapter';
@@ -100,7 +99,9 @@ export const ReportesPanel: React.FC = () => {
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
-  const [showSidebarTip, setShowSidebarTip] = useState(true);
+
+  const outletContext = useOutletContext<{ isCollapsed?: boolean; setIsCollapsed?: (val: boolean) => void }>();
+  const isCollapsed = outletContext?.isCollapsed ?? false;
 
   const fetchReportData = async (silencioso = false) => {
     try {
@@ -133,6 +134,12 @@ export const ReportesPanel: React.FC = () => {
   useEffect(() => {
     fetchReportData();
   }, []);
+
+  useEffect(() => {
+    if (!isCollapsed && !loading) {
+      AlertAdapter.toast('Sugerimos minimizar el menú lateral para una mejor vista', 'info');
+    }
+  }, [isCollapsed, loading]);
 
   const availableYears = useMemo(() => {
     const yearsSet = new Set<number>();
@@ -696,31 +703,7 @@ export const ReportesPanel: React.FC = () => {
         </div>
       </div>
 
-      {/* BANNER SUGERENCIA DE VISUALIZACIÓN PANORÁMICA (MINIMIZAR SIDEBAR) */}
-      {showSidebarTip && (
-        <div className="bg-primary/10 border border-primary/25 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-fade-in no-print">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/15 text-primary rounded-xl shrink-0">
-              <PanelLeftClose className="h-5 w-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-on-surface flex items-center gap-1.5">
-                <span>💡 Recomendación de Visualización Panorámica</span>
-              </h4>
-              <p className="text-[11px] text-on-surface-variant mt-0.5 leading-relaxed font-medium">
-                Sugerimos <strong>contraer la barra lateral (Sidebar)</strong> haciendo clic en el icono <span className="font-bold text-primary">◀</span> en la esquina superior izquierda. Esto ampliará la vista para una mejor legibilidad de los gráficos y datos financieros.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setShowSidebarTip(false)}
-            className="px-3 py-1.5 bg-surface hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 border border-outline-variant/40 flex items-center gap-1"
-            title="Ocultar sugerencia"
-          >
-            <X className="h-3.5 w-3.5" /> Entendido
-          </button>
-        </div>
-      )}
+      {/* FIN DEL PANEL DE CONTROL */}
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/25 p-4 rounded-xl flex items-start gap-3 no-print">

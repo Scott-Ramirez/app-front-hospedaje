@@ -283,7 +283,7 @@ export const MainLayout = () => {
         }`}
       >
         <div className="mx-auto max-w-[1200px]">
-          <Outlet />
+          <Outlet context={{ isCollapsed, setIsCollapsed }} />
         </div>
       </main>
 
