@@ -78,10 +78,19 @@ export const MainLayout = () => {
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
-        {/* Cabecera del Sidebar con Imagen Adaptativa Aumentada */}
-        <div className={`px-4 mb-6 flex items-center justify-between min-h-[56px] ${isCollapsed ? 'px-2' : ''}`}>
+        {/* Botón flotante al borde derecho del sidebar para colapsar/expandir sin afectar los logos */}
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3.5 top-7 h-7 w-7 rounded-full bg-surface border border-outline-variant shadow-md flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high hover:scale-110 transition-all cursor-pointer z-[60]"
+          title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+        >
+          <ChevronLeft className={`h-4 w-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
+        </button>
+
+        {/* Cabecera del Sidebar con Imagen Adaptativa */}
+        <div className="px-4 mb-6 flex items-center justify-center min-h-[56px]">
           {!isCollapsed ? (
-            <div className="flex items-center gap-2 overflow-hidden animate-fade-in duration-200 py-1">
+            <div className="flex items-center justify-center overflow-hidden animate-fade-in duration-200 py-1">
               <img 
                 src={sidebarLogo} 
                 alt="Hospedaje RAYZA" 
@@ -93,18 +102,10 @@ export const MainLayout = () => {
               <img 
                 src={isotipoLogo} 
                 alt="RAYZA" 
-                className="h-10 w-10 md:h-12 md:w-12 object-contain filter drop-shadow-sm transition-all duration-300" 
+                className="h-14 w-14 md:h-16 md:w-16 object-contain filter drop-shadow-sm transition-all duration-300" 
               />
             </div>
           )}
-          
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1.5 rounded-md text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer shrink-0"
-            title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
-          >
-            <ChevronLeft className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} />
-          </button>
         </div>
 
         {/* Links de navegación */}
