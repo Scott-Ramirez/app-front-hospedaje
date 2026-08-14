@@ -194,6 +194,7 @@ export const BandejaNotificaciones: React.FC = () => {
               {filtradas.map((alerta) => {
                 const esCaja = alerta.habitacionNumero === 'CAJA' || alerta.habitacionNumero === 'EGRESO';
                 const esAudit = alerta.habitacionNumero === 'AUDITORÍA' || alerta.habitacionNumero === 'SISTEMA';
+                const numHab = alerta.habitacionNumero ? alerta.habitacionNumero.replace(/\D/g, '') : '';
                 
                 // Color dinámico según la etiqueta
                 const badgeColor = esCaja
@@ -219,12 +220,12 @@ export const BandejaNotificaciones: React.FC = () => {
                     </div>
 
                     {/* Contenido */}
-                    <div className="flex-1 min-w-0 pr-6">
+                    <div className="flex-1 min-w-0">
                       <p className={`text-xs md:text-sm text-on-surface-variant leading-relaxed ${!alerta.leido ? 'font-bold text-on-surface' : ''}`}>
                         {alerta.mensaje}
                       </p>
                       
-                      <div className="flex flex-wrap items-center justify-between gap-2 mt-2 select-none">
+                      <div className="flex flex-wrap items-center justify-between gap-2 mt-3 select-none">
                         <div className="flex items-center gap-1 text-[10px] text-on-surface-variant/60 font-semibold">
                           <Clock className="h-3 w-3" />
                           <span>{formatHoraExacta(alerta.timestamp)}</span>
@@ -235,11 +236,11 @@ export const BandejaNotificaciones: React.FC = () => {
                          alerta.habitacionNumero && 
                          !['CAJA', 'EGRESO', 'AUDITORÍA', 'SISTEMA'].includes(alerta.habitacionNumero) && (
                           <button
-                            onClick={() => handleLiberarHabitacion(alerta.habitacionNumero.replace(/\D/g, ''), alerta.id)}
-                            disabled={liberandoHab === alerta.habitacionNumero.replace(/\D/g, '')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                            onClick={() => handleLiberarHabitacion(numHab || alerta.habitacionNumero!, alerta.id)}
+                            disabled={liberandoHab === (numHab || alerta.habitacionNumero)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
                           >
-                            {liberandoHab === alerta.habitacionNumero.replace(/\D/g, '') ? (
+                            {liberandoHab === (numHab || alerta.habitacionNumero) ? (
                               <>
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 Liberando...
@@ -247,7 +248,7 @@ export const BandejaNotificaciones: React.FC = () => {
                             ) : (
                               <>
                                 <KeyRound className="h-3.5 w-3.5" />
-                                Liberar Hab. {alerta.habitacionNumero}
+                                Liberar Habitación {numHab || alerta.habitacionNumero}
                               </>
                             )}
                           </button>
@@ -260,17 +261,6 @@ export const BandejaNotificaciones: React.FC = () => {
                         )}
                       </div>
                     </div>
-
-                    {/* Botón marcar leído */}
-                    {!alerta.leido && (
-                      <button
-                        onClick={() => marcarComoLeida(alerta.id)}
-                        className="absolute top-4 right-4 p-1.5 rounded-lg text-primary hover:bg-primary-container/10 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
-                        title="Marcar como leído"
-                      >
-                        <Check className="h-4 w-4" />
-                      </button>
-                    )}
                   </div>
                 );
               })}
