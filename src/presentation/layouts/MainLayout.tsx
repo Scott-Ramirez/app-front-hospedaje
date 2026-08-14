@@ -44,8 +44,19 @@ export const MainLayout = () => {
   const sidebarLogo = isDarkMode ? sidebarLogoDark : sidebarLogoLight;
   const isotipoLogo = isDarkMode ? isotipoDark : isotipoLight;
 
-  // Estado para controlar el colapso del Sidebar y Modales
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // Estado para controlar el colapso del Sidebar con persistencia en localStorage
+  const [isCollapsed, setIsCollapsedState] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const setIsCollapsed = (value: boolean | ((prev: boolean) => boolean)) => {
+    setIsCollapsedState(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
+
   const [isCierreModalOpen, setIsCierreModalOpen] = useState(false);
   const [isSolicitudEgresoOpen, setIsSolicitudEgresoOpen] = useState(false);
   const [isPanelEgresoOpen, setIsPanelEgresoOpen] = useState(false);

@@ -138,8 +138,10 @@ export const ReportesPanel: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Si el sidebar ESTÁ MINIMIZADO (isCollapsed === true), NO mostrar la alerta
-    if (isCollapsed) return;
+    const isMinimizado = isCollapsed || localStorage.getItem('sidebar_collapsed') === 'true';
+
+    // Si el sidebar ESTÁ MINIMIZADO, NO MOSTRAR LA ALERTA NUNCA
+    if (isMinimizado) return;
 
     // Solo mostrar la alerta si el sidebar está expandido, ya cargaron los datos y no se ha mostrado aún
     if (!loading && !hasShownToastRef.current) {
