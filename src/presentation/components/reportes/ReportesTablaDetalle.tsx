@@ -193,20 +193,63 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
         </p>
       </div>
 
-      {/* Métodos de Pago */}
+      {/* Métodos de Pago con Barras de Progreso */}
       <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
-        <div className="flex items-center gap-2 mb-3 border-b border-outline-variant/60 pb-2.5">
-          <Coins className="h-5 w-5 text-primary" />
-          <div>
-            <h3 className="font-bold text-sm text-on-surface">Métodos de Pago</h3>
-            <p className="text-[10px] text-on-surface-variant">Canales de recaudación económica</p>
+        <div>
+          <div className="flex items-center justify-between border-b border-outline-variant/60 pb-2.5 mb-4">
+            <div className="flex items-center gap-2">
+              <Coins className="h-5 w-5 text-primary" />
+              <div>
+                <h3 className="font-bold text-sm text-on-surface">Métodos de Pago</h3>
+                <p className="text-[10px] text-on-surface-variant">Desglose por barra de progreso</p>
+              </div>
+            </div>
+            <span className="text-[10px] font-black font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              S/. {dataFiltrada.ingresosTotales.toFixed(2)}
+            </span>
           </div>
+
+          {metodosSegments.length === 0 ? (
+            <div className="h-32 flex items-center justify-center text-xs text-on-surface-variant/40 border border-dashed border-outline-variant/40 rounded-xl bg-surface-container/20">
+              Sin transacciones registradas
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {metodosSegments.map((seg, idx) => {
+                const percentage = dataFiltrada.ingresosTotales > 0
+                  ? Math.min(100, Math.max(0, (seg.value / dataFiltrada.ingresosTotales) * 100))
+                  : 0;
+
+                return (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: seg.color }} />
+                        <span className="text-on-surface font-bold capitalize text-xs">{seg.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2 font-mono">
+                        <span className="text-on-surface font-black text-xs">S/. {seg.value.toFixed(2)}</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface-container text-on-surface-variant">
+                          {percentage.toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                    {/* Barra de progreso */}
+                    <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden p-0.5 border border-outline-variant/30">
+                      <div
+                        className="h-full rounded-full transition-all duration-500 shadow-xs"
+                        style={{
+                          width: `${percentage}%`,
+                          backgroundColor: seg.color,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-        <DonutChart 
-          segments={metodosSegments} 
-          formatValue={(val) => `S/. ${val.toFixed(0)}`}
-          centerLabel="Total Rec"
-        />
       </div>
 
       {/* Ocupación por Categoría */}
