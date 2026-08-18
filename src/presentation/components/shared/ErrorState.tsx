@@ -13,7 +13,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   isRetrying
 }) => {
   const handleContactSoporte = () => {
-    const telefono = "51914976865"; 
+    const telefono = "51920569220"; 
     const texto = encodeURIComponent("Hola Soporte, el sistema me indica que no hay conexión con el servidor. Solicito asistencia.");
     window.open(`https://wa.me/${telefono}?text=${texto}`, '_blank');
   };
