@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { huespedesRepository } from '../../data/repositories/huespedes.repository';
 import type { Huesped, CreateHuespedDto } from '../../data/repositories/huespedes.repository';
+import { AlertAdapter } from '../../core/adapters/alert.adapter';
 
 interface HuespedFormState {
   nombre: string;
@@ -108,30 +109,49 @@ export const useHuespedes = () => {
     e.preventDefault();
     try {
       setCargando(true);
+      setError(null);
+
+      const payload: CreateHuespedDto = {
+        nombre: form.nombre.trim(),
+        dni: form.dni.trim(),
+      };
+
+      if (form.celular && form.celular.trim().length > 0) {
+        payload.celular = form.celular.trim();
+      }
+
       if (editandoId) {
         // Ejecuta PATCH en NestJS
-        const actualizado = await huespedesRepository.actualizar(editandoId, form as Partial<CreateHuespedDto>);
+        const actualizado = await huespedesRepository.actualizar(editandoId, payload);
         setHuespedes((prev) => {
           const list = normalizarHuespedes(prev);
           return list.map((h) => (h.id === editandoId ? actualizado : h));
         });
+        AlertAdapter.toast('Datos del huésped actualizados correctamente', 'success');
       } else {
         // Ejecuta POST en NestJS
-        const nuevo = await huespedesRepository.crear(form as CreateHuespedDto);
+        const nuevo = await huespedesRepository.crear(payload);
         setHuespedes((prev) => {
           const list = normalizarHuespedes(prev);
           return [nuevo, ...list];
         });
+        AlertAdapter.toast('Huésped registrado con éxito', 'success');
       }
       
       setModalAbierto(false);
       setForm(formInicial);
+      setEditandoId(null);
       
-      // 🔥 Refrescamos métricas tras crear o editar por si altera el estado global
-      const nuevasMetricas = await huespedesRepository.metricas();
-      setMetrics(nuevasMetricas);
+      // 🔥 Refrescamos métricas y lista completa fresca desde el backend
+      await Promise.all([
+        huespedesRepository.metricas().then(setMetrics).catch(() => {}),
+        cargarHuespedes()
+      ]);
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al guardar la ficha del huésped');
+      const msg = err.response?.data?.message;
+      const errorStr = Array.isArray(msg) ? msg.join(', ') : msg || 'Error al guardar la ficha del huésped';
+      setError(errorStr);
+      AlertAdapter.error('Error al Guardar', errorStr);
     } finally {
       setCargando(false);
     }
