@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEstancias } from '../hooks/useEstancias';
 import { CheckInModal } from '../components/shared/CheckInModal';
 import { DetalleEstanciaModal } from '../components/shared/DetalleEstanciaModal';
@@ -11,7 +11,10 @@ import {
   BedDouble,
   AlertTriangle,
   CheckCircle2,
-  Clock3
+  Clock3,
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export const EstanciasActivas = () => {
@@ -26,6 +29,15 @@ export const EstanciasActivas = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEstancia, setSelectedEstancia] = useState<any>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Estados de Búsqueda y Paginación
+  const [busqueda, setBusqueda] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const itemsPorPagina = 6;
+
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [busqueda, estancias.length]);
 
   const formatFechaCorta = (fechaStr: string) => {
     if (!fechaStr) return '---';
@@ -45,6 +57,22 @@ export const EstanciasActivas = () => {
     const pagado = Number(e.total_pagar || 0);
     return Boolean(e.estaVencida) && (montoAcum - pagado) > 0;
   }).length;
+
+  // Filtrado y cálculo de paginación
+  const estanciasFiltradas = estancias.filter((e) => {
+    if (!busqueda.trim()) return true;
+    const q = busqueda.toLowerCase().trim();
+    const num = (e.habitacion?.numero || '').toLowerCase();
+    const nom = (e.huesped?.nombre || '').toLowerCase();
+    const dni = (e.huesped?.dni || '').toLowerCase();
+    return num.includes(q) || nom.includes(q) || dni.includes(q);
+  });
+
+  const totalItems = estanciasFiltradas.length;
+  const totalPaginas = Math.max(1, Math.ceil(totalItems / itemsPorPagina));
+  const indiceInicial = (paginaActual - 1) * itemsPorPagina;
+  const indiceFinal = indiceInicial + itemsPorPagina;
+  const estanciasPaginadas = estanciasFiltradas.slice(indiceInicial, indiceFinal);
 
   return (
     <div className="space-y-5">
@@ -66,12 +94,24 @@ export const EstanciasActivas = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {/* Buscador */}
+          <div className="relative flex-1 sm:flex-initial">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-on-surface-variant/60" />
+            <input
+              type="text"
+              placeholder="Buscar hab, huésped o DNI..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full sm:w-[220px] bg-surface-lowest border border-outline-variant rounded-lg pl-9 pr-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary text-on-surface transition-all placeholder:text-on-surface-variant/60"
+            />
+          </div>
+
           <button
             onClick={() => recargar()}
             disabled={loading}
             className="h-9 w-9 flex items-center justify-center rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer disabled:opacity-40"
-            title="Actualizar"
+            title="Actualizar lista"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -93,21 +133,25 @@ export const EstanciasActivas = () => {
             <Loader2 className="h-7 w-7 animate-spin text-primary" />
             <p className="text-sm">Cargando estancias...</p>
           </div>
-        ) : estancias.length === 0 ? (
+        ) : estanciasFiltradas.length === 0 ? (
           <div className="py-20 text-center flex flex-col items-center gap-3">
             <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
               <BedDouble className="h-7 w-7 text-primary/60" />
             </div>
             <div>
-              <p className="font-semibold text-on-surface text-sm">Sin estancias activas</p>
-              <p className="text-xs text-on-surface-variant mt-0.5">Todas las habitaciones están disponibles.</p>
+              <p className="font-semibold text-on-surface text-sm">
+                {busqueda ? 'No se encontraron resultados' : 'Sin estancias activas'}
+              </p>
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                {busqueda ? `Ninguna estancia coincide con "${busqueda}"` : 'Todas las habitaciones están disponibles.'}
+              </p>
             </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-outline-variant text-xs font-semibold text-on-surface-variant bg-surface-container-low">
+                <tr className="border-b border-outline-variant text-xs font-semibold text-on-surface-variant bg-surface-container-low select-none">
                   <th className="px-5 py-3.5 whitespace-nowrap">Hab.</th>
                   <th className="px-5 py-3.5 whitespace-nowrap">Huésped / DNI</th>
                   <th className="px-5 py-3.5 whitespace-nowrap">Check-In</th>
@@ -118,7 +162,7 @@ export const EstanciasActivas = () => {
                 </tr>
               </thead>
               <tbody>
-                {estancias.map((estancia) => {
+                {estanciasPaginadas.map((estancia) => {
                   const montoAcum = Number(estancia.montoAcumulado ?? 0);
                   const pagado = Number(estancia.total_pagar || 0);
                   const deuda = Math.max(0, montoAcum - pagado);
@@ -210,6 +254,39 @@ export const EstanciasActivas = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* CONTROLES DE PAGINACIÓN */}
+        {totalItems > 0 && (
+          <div className="bg-surface-container-low px-5 py-3.5 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-3 select-none">
+            <p className="text-xs font-semibold text-on-surface-variant">
+              Mostrando registros del <span className="text-on-surface font-bold">{indiceInicial + 1}</span> al <span className="text-on-surface font-bold">{Math.min(indiceFinal, totalItems)}</span> de un total de <span className="text-on-surface font-bold">{totalItems}</span> {totalItems === 1 ? 'estancia' : 'estancias'}.
+            </p>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPaginaActual((p) => Math.max(p - 1, 1))}
+                disabled={paginaActual === 1 || loading}
+                className="p-1.5 rounded-lg border border-outline-variant bg-surface-lowest text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:hover:bg-surface-lowest transition-colors cursor-pointer disabled:cursor-not-allowed"
+                title="Página anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              
+              <div className="text-xs font-bold px-3 py-1.5 bg-surface-lowest border border-outline-variant rounded-lg text-on-surface">
+                Página {paginaActual} de {totalPaginas}
+              </div>
+
+              <button
+                onClick={() => setPaginaActual((p) => Math.min(p + 1, totalPaginas))}
+                disabled={paginaActual === totalPaginas || loading}
+                className="p-1.5 rounded-lg border border-outline-variant bg-surface-lowest text-on-surface-variant hover:bg-surface-container-high disabled:opacity-40 disabled:hover:bg-surface-lowest transition-colors cursor-pointer disabled:cursor-not-allowed"
+                title="Página siguiente"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
