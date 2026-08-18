@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { KeyRound, User, Loader2, Sun, Moon } from 'lucide-react';
+import { KeyRound, User, Loader2, Sun, Moon, Eye, EyeOff } from 'lucide-react';
 import { AlertAdapter } from '../../core/adapters/alert.adapter';
 import logoRayzaLight from '../../assets/isotipo.png';
 import logoRayzaDark from '../../assets/isotipo-dark.png';
@@ -17,6 +17,7 @@ export const Login = () => {
   // Estados del formulario
   const [username, setUsername] = useState('');
   const [clave, setClave] = useState('');
+  const [mostrarClave, setMostrarClave] = useState(false);
   const [cargando, setCargando] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,13 +105,21 @@ export const Login = () => {
                 <KeyRound className="h-4 w-4" />
               </span>
               <input
-                type="password"
+                type={mostrarClave ? 'text' : 'password'}
                 value={clave}
                 onChange={(e) => setClave(e.target.value)}
                 disabled={cargando}
                 placeholder="••••••••"
-                className="w-full rounded-md border border-outline bg-surface-low py-2 pl-9 pr-3 text-sm text-on-surface placeholder-outline-variant outline-none transition-all focus:border-primary focus:bg-surface-lowest focus:ring-1 focus:ring-primary disabled:opacity-50"
+                className="w-full rounded-md border border-outline bg-surface-low py-2 pl-9 pr-10 text-sm text-on-surface placeholder-outline-variant outline-none transition-all focus:border-primary focus:bg-surface-lowest focus:ring-1 focus:ring-primary disabled:opacity-50"
               />
+              <button
+                type="button"
+                onClick={() => setMostrarClave(!mostrarClave)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-on-surface-variant/70 hover:text-on-surface transition-colors cursor-pointer outline-none"
+                title={mostrarClave ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {mostrarClave ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
           </div>
 
