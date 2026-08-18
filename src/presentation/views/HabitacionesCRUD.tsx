@@ -189,8 +189,8 @@ export const HabitacionesCRUD: React.FC = () => {
                                         <td className="py-3.5 px-5 font-bold text-on-surface">
                                             Habitación {room.numero}
                                         </td>
-                                        <td className="py-3.5 px-5 capitalize text-on-surface-variant">
-                                            {room.tipo}
+                                        <td className="py-3.5 px-5 capitalize text-on-surface-variant font-medium">
+                                            {room.tipo === 'simple' ? 'Habitación Simple' : (room.tipo === 'matrimonial' || room.tipo === 'doble' ? 'Habitación Doble' : room.tipo)}
                                         </td>
                                         <td className="py-3.5 px-5">
                                             <div className="flex gap-2.5 text-on-surface-variant/30">
@@ -358,8 +358,8 @@ export const HabitacionesCRUD: React.FC = () => {
                                             onChange={(e) => setForm({ ...form, tipo: e.target.value as any })}
                                             className="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none text-on-surface"
                                         >
-                                            <option value="simple" className="bg-surface text-on-surface">Simple</option>
-                                            <option value="matrimonial" className="bg-surface text-on-surface">Matrimonial</option>
+                                            <option value="simple" className="bg-surface text-on-surface">Habitación Simple</option>
+                                            <option value="matrimonial" className="bg-surface text-on-surface">Habitación Doble</option>
                                         </select>
                                     </div>
 
@@ -404,6 +404,15 @@ export const HabitacionesCRUD: React.FC = () => {
                                                     className="rounded text-primary focus:ring-primary bg-surface border-outline-variant" 
                                                 />
                                                 Ventilador
+                                            </label>
+                                            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={Boolean(form.dos_camas)} 
+                                                    onChange={(e) => setForm({ ...form, dos_camas: e.target.checked })} 
+                                                    className="rounded text-primary focus:ring-primary bg-surface border-outline-variant" 
+                                                />
+                                                2 Camas Habilitadas
                                             </label>
                                         </div>
                                     </div>

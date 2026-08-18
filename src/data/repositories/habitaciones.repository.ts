@@ -18,10 +18,11 @@ export interface DashboardData {
 export interface HabitacionDTO {
   id?: string;
   numero: string;
-  tipo: 'simple' | 'matrimonial';
+  tipo: 'simple' | 'matrimonial' | 'doble' | string;
   aire_acondicionado: boolean;
   wifi: boolean;
   ventilador: boolean;
+  dos_camas?: boolean;
   precio: number;
   estado?: 'disponible' | 'ocupado' | 'limpieza';
   createdAt?: string;

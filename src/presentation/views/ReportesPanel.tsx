@@ -7,12 +7,14 @@ import {
   FileText, 
   RefreshCw, 
   Loader2, 
-  AlertTriangle
+  AlertTriangle,
+  Receipt
 } from 'lucide-react';
 import { SolesIcon } from '../components/shared/SolesIcon';
 import { AlertAdapter } from '../../core/adapters/alert.adapter';
 import { ReportesGraficoBarras } from '../components/reportes/ReportesGraficoBarras';
 import { ReportesTablaDetalle } from '../components/reportes/ReportesTablaDetalle';
+import { LiquidacionMensualPanel } from '../components/reportes/LiquidacionMensualPanel';
 
 interface HistorialRegistro {
   id: string;
@@ -99,6 +101,7 @@ export const ReportesPanel: React.FC = () => {
 
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
+  const [seccionPrincipal, setSeccionPrincipal] = useState<'liquidacion' | 'estadisticas'>('liquidacion');
 
   const outletContext = useOutletContext<{ isCollapsed?: boolean; setIsCollapsed?: (val: boolean) => void }>();
   const isCollapsed = outletContext?.isCollapsed ?? false;
@@ -646,152 +649,192 @@ export const ReportesPanel: React.FC = () => {
   return (
     <div className="p-6 max-w-[1280px] mx-auto text-on-surface space-y-6 select-none print-container">
       
-      {/* HEADER DE CONTROL */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5 no-print">
-        <div>
-          <h2 className="text-2xl font-black tracking-tight text-on-surface flex items-center gap-2">
-            <BarChart3 className="h-6 w-6 text-primary" />
-            Reportes y Estadísticas Contables
-          </h2>
-          <p className="text-xs text-on-surface-variant mt-1">Consulte ingresos, egresos, rentabilidad y volumen comercial del hospedaje.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Selector de Año */}
-          <select 
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-            className="bg-surface-lowest text-xs font-bold px-3 py-2 rounded-lg border border-outline-variant outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+      {/* ─── PESTAÑAS PRINCIPALES DE REPORTES ───────────────────────────────── */}
+      <div className="flex border-b border-outline-variant/60 pb-3 gap-3 no-print items-center justify-between flex-wrap">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSeccionPrincipal('liquidacion')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              seccionPrincipal === 'liquidacion'
+                ? 'bg-primary text-on-primary shadow-md'
+                : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
+            }`}
           >
-            {availableYears.map(y => (
-              <option key={y} value={y}>Año {y}</option>
-            ))}
-          </select>
-
-          {/* Selector de Mes */}
-          <select 
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="bg-surface-lowest text-xs font-bold px-3 py-2 rounded-lg border border-outline-variant outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
-          >
-            <option value="ALL">Todo el Año</option>
-            {NOMBRES_MESES.map((m, idx) => (
-              <option key={idx} value={idx.toString()}>{m}</option>
-            ))}
-          </select>
-
-          {/* Actualizar */}
-          <button 
-            onClick={() => fetchReportData(true)}
-            disabled={refreshing}
-            className="p-2 bg-surface hover:bg-surface-container-high rounded-lg border border-outline-variant/65 cursor-pointer disabled:opacity-50"
-            title="Refrescar datos"
-          >
-            <RefreshCw className={`h-4 w-4 text-on-surface-variant ${refreshing ? 'animate-spin' : ''}`} />
+            <Receipt className="h-4 w-4" />
+            <span>🏢 Liquidación y Cierre Mensual (Para el Dueño)</span>
           </button>
 
-          {/* Exportar */}
-          <button 
-            onClick={exportToExcel}
-            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs"
-            title="Exportar a Microsoft Excel"
+          <button
+            onClick={() => setSeccionPrincipal('estadisticas')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              seccionPrincipal === 'estadisticas'
+                ? 'bg-primary text-on-primary shadow-md'
+                : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
+            }`}
           >
-            <FileSpreadsheet className="h-4 w-4" />
-            <span>Exportar XLS</span>
-          </button>
-
-          {/* Imprimir */}
-          <button 
-            onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3 py-2 bg-surface-lowest hover:bg-surface-container-high text-on-surface text-xs font-bold rounded-lg border border-outline-variant cursor-pointer transition-all"
-            title="Imprimir reporte en PDF / Papel"
-          >
-            <FileText className="h-4 w-4 text-primary" />
-            <span>Imprimir</span>
+            <BarChart3 className="h-4 w-4" />
+            <span>📊 Analítica y Gráficos Estadísticos</span>
           </button>
         </div>
       </div>
 
-      {/* FIN DEL PANEL DE CONTROL */}
-
-      {error && (
-        <div className="bg-red-500/10 border border-red-500/25 p-4 rounded-xl flex items-start gap-3 no-print">
-          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-xs font-bold text-red-700 uppercase">Fallo de Carga de Datos</h4>
-            <p className="text-xs text-red-600/90 mt-1 font-medium">{error}</p>
-          </div>
-        </div>
+      {/* ─── SECCIÓN 1: LIQUIDACIÓN MENSUAL CONSOLIDADA ─────────────────────── */}
+      {seccionPrincipal === 'liquidacion' && (
+        <LiquidacionMensualPanel />
       )}
 
-      {/* RENDER EN MODO IMPRESIÓN */}
-      <div className="only-print border-b border-outline-variant pb-4 mb-4">
-        <h1 className="text-xl font-black text-center text-primary">REPORTES CONTABLES - HOSPEDAJE RAYZA</h1>
-        <p className="text-[10px] text-center text-on-surface-variant mt-1 font-medium">
-          Periodo: {selectedMonth === 'ALL' ? 'Consolidado Anual' : NOMBRES_MESES[parseInt(selectedMonth, 10)]} de {selectedYear} | Emitido: {new Date().toLocaleString()}
-        </p>
-      </div>
+      {/* ─── SECCIÓN 2: ANALÍTICA Y ESTADÍSTICAS GENERALES ──────────────────── */}
+      {seccionPrincipal === 'estadisticas' && (
+        <div className="space-y-6 animate-fade-in">
+          
+          {/* HEADER DE CONTROL ANALÍTICO */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5 no-print">
+            <div>
+              <h2 className="text-2xl font-black tracking-tight text-on-surface flex items-center gap-2">
+                <BarChart3 className="h-6 w-6 text-primary" />
+                Reportes y Estadísticas Contables
+              </h2>
+              <p className="text-xs text-on-surface-variant mt-1">Consulte ingresos, egresos, rentabilidad y volumen comercial del hospedaje.</p>
+            </div>
 
-      {/* KPIs DE CABECERA */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print-kpis-grid">
-        <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Check-outs Realizados</span>
-            <h3 className="text-2xl font-black">{dataFiltrada.totalEstancias} estancias</h3>
-            <p className="text-[9px] text-on-surface-variant font-medium">
-              {dataFiltrada.mayorDemandaTexto} · Ocupación: {dataFiltrada.porcentajeOcupacion.toFixed(1)}%
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Selector de Año */}
+              <select 
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
+                className="bg-surface-lowest text-xs font-bold px-3 py-2 rounded-lg border border-outline-variant outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+              >
+                {availableYears.map(y => (
+                  <option key={y} value={y}>Año {y}</option>
+                ))}
+              </select>
+
+              {/* Selector de Mes */}
+              <select 
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="bg-surface-lowest text-xs font-bold px-3 py-2 rounded-lg border border-outline-variant outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+              >
+                <option value="ALL">Todo el Año</option>
+                {NOMBRES_MESES.map((m, idx) => (
+                  <option key={idx} value={idx.toString()}>{m}</option>
+                ))}
+              </select>
+
+              {/* Actualizar */}
+              <button 
+                onClick={() => fetchReportData(true)}
+                disabled={refreshing}
+                className="p-2 bg-surface hover:bg-surface-container-high rounded-lg border border-outline-variant/65 cursor-pointer disabled:opacity-50"
+                title="Refrescar datos"
+              >
+                <RefreshCw className={`h-4 w-4 text-on-surface-variant ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
+
+              {/* Exportar */}
+              <button 
+                onClick={exportToExcel}
+                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs"
+                title="Exportar a Microsoft Excel"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                <span>Exportar XLS</span>
+              </button>
+
+              {/* Imprimir */}
+              <button 
+                onClick={handlePrint}
+                className="flex items-center gap-1.5 px-3 py-2 bg-surface-lowest hover:bg-surface-container-high text-on-surface text-xs font-bold rounded-lg border border-outline-variant cursor-pointer transition-all"
+                title="Imprimir reporte en PDF / Papel"
+              >
+                <FileText className="h-4 w-4 text-primary" />
+                <span>Imprimir</span>
+              </button>
+            </div>
+          </div>
+
+          {/* FIN DEL PANEL DE CONTROL */}
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/25 p-4 rounded-xl flex items-start gap-3 no-print">
+              <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-xs font-bold text-red-700 uppercase">Fallo de Carga de Datos</h4>
+                <p className="text-xs text-red-600/90 mt-1 font-medium">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* RENDER EN MODO IMPRESIÓN */}
+          <div className="only-print border-b border-outline-variant pb-4 mb-4">
+            <h1 className="text-xl font-black text-center text-primary">REPORTES CONTABLES - HOSPEDAJE RAYZA</h1>
+            <p className="text-[10px] text-center text-on-surface-variant mt-1 font-medium">
+              Periodo: {selectedMonth === 'ALL' ? 'Consolidado Anual' : NOMBRES_MESES[parseInt(selectedMonth, 10)]} de {selectedYear} | Emitido: {new Date().toLocaleString()}
             </p>
           </div>
-        </div>
 
-        <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Ingresos por Estancias</span>
-            <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-              <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
-              {dataFiltrada.ingresosTotales.toFixed(2)}
-            </h3>
-            <p className="text-[9px] text-on-surface-variant font-medium">{dataFiltrada.promedioIngresoTexto}</p>
+          {/* KPIs DE CABECERA */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print-kpis-grid">
+            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Check-outs Realizados</span>
+                <h3 className="text-2xl font-black">{dataFiltrada.totalEstancias} estancias</h3>
+                <p className="text-[9px] text-on-surface-variant font-medium">
+                  {dataFiltrada.mayorDemandaTexto} · Ocupación: {dataFiltrada.porcentajeOcupacion.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Ingresos por Estancias</span>
+                <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                  <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
+                  {dataFiltrada.ingresosTotales.toFixed(2)}
+                </h3>
+                <p className="text-[9px] text-on-surface-variant font-medium">{dataFiltrada.promedioIngresoTexto}</p>
+              </div>
+            </div>
+
+            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Gastos / Retiros Aprobados</span>
+                <h3 className="text-2xl font-black text-error">
+                  <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
+                  {dataFiltrada.egresosTotales.toFixed(2)}
+                </h3>
+                <p className="text-[9px] text-on-surface-variant font-medium">Insumos y compras del hospedaje</p>
+              </div>
+            </div>
+
+            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Utilidad Contable Neta</span>
+                <h3 className={`text-2xl font-black ${dataFiltrada.utilidadNeta >= 0 ? 'text-primary' : 'text-error'}`}>
+                  <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
+                  {dataFiltrada.utilidadNeta.toFixed(2)}
+                </h3>
+                <p className="text-[9px] text-on-surface-variant">Diferencia neta ingresos vs egresos</p>
+              </div>
+            </div>
           </div>
+
+          {/* GRÁFICOS ANALÍTICOS */}
+          <ReportesGraficoBarras
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+            labels={dataFiltrada.labels}
+            clientelaData={dataFiltrada.clientelaData}
+            ingresosData={dataFiltrada.ingresosData}
+            egresosData={dataFiltrada.egresosData}
+          />
+
+          {/* LEADERBOARDS & TABLAS */}
+          <ReportesTablaDetalle
+            dataFiltrada={dataFiltrada}
+          />
         </div>
-
-        <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Gastos / Retiros Aprobados</span>
-            <h3 className="text-2xl font-black text-error">
-              <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
-              {dataFiltrada.egresosTotales.toFixed(2)}
-            </h3>
-            <p className="text-[9px] text-on-surface-variant font-medium">Insumos y compras del hospedaje</p>
-          </div>
-        </div>
-
-        <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Utilidad Contable Neta</span>
-            <h3 className={`text-2xl font-black ${dataFiltrada.utilidadNeta >= 0 ? 'text-primary' : 'text-error'}`}>
-              <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
-              {dataFiltrada.utilidadNeta.toFixed(2)}
-            </h3>
-            <p className="text-[9px] text-on-surface-variant">Diferencia neta ingresos vs egresos</p>
-          </div>
-        </div>
-      </div>
-
-      {/* GRÁFICOS ANALÍTICOS */}
-      <ReportesGraficoBarras
-        selectedYear={selectedYear}
-        selectedMonth={selectedMonth}
-        labels={dataFiltrada.labels}
-        clientelaData={dataFiltrada.clientelaData}
-        ingresosData={dataFiltrada.ingresosData}
-        egresosData={dataFiltrada.egresosData}
-      />
-
-      {/* LEADERBOARDS & TABLAS */}
-      <ReportesTablaDetalle
-        dataFiltrada={dataFiltrada}
-      />
+      )}
 
     </div>
   );

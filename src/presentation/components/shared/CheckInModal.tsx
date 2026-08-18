@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
-import { X, Calendar, User, CreditCard, Phone, Coins, Wallet, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { X, Calendar, User, CreditCard, Phone, Coins, Wallet, Loader2, AlertTriangle, ShieldAlert, Info } from 'lucide-react';
 import { useHabitaciones } from '../../hooks/useHabitaciones';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
 import { huespedesRepository } from '../../../data/repositories/huespedes.repository';
+import { ReservasRepository } from '../../../data/repositories/reservas.repository';
 import type { RegistroInicialDto } from '../../../data/repositories/estancias.repository';
 
 interface CheckInModalProps {
@@ -11,10 +12,13 @@ interface CheckInModalProps {
     onConfirm: (datos: RegistroInicialDto) => Promise<boolean>;
 }
 
+const reservasRepo = new ReservasRepository();
+
 export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) => {
     const { habitaciones, cargando: loadingHabitaciones } = useHabitaciones() as any;
     const [submitting, setSubmitting] = useState(false);
     const [noches, setNoches] = useState('1');
+    const [reservasConfirmadas, setReservasConfirmadas] = useState<any[]>([]);
 
     // Autocomplete
     const [buscandoHuesped, setBuscandoHuesped] = useState(false);
@@ -29,6 +33,16 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
         pago_inicial: '',
         metodo_pago: '',
     });
+
+    // Cargar reservas confirmadas al abrir modal
+    useEffect(() => {
+        if (isOpen) {
+            reservasRepo.listarTodas().then(data => {
+                const confirmadas = data.filter((r: any) => r.estado === 'confirmada');
+                setReservasConfirmadas(confirmadas);
+            }).catch(err => console.error('Error al cargar reservas en CheckInModal:', err));
+        }
+    }, [isOpen]);
 
     // Limpiar el formulario cada vez que se abre/cierra el modal
     useEffect(() => {
@@ -51,6 +65,46 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
     const habitacionesDisponibles = Array.isArray(habitaciones)
         ? habitaciones.filter((h: any) => h.estado === 'disponible')
         : [];
+
+    // Calcular si la habitación seleccionada tiene una reserva próxima (por ID o por número físico de habitación)
+    const infoReserva = useMemo(() => {
+        if (!formData.habitacionId || reservasConfirmadas.length === 0) return null;
+        const habSeleccionada = habitacionesDisponibles.find((h: any) => h.id === formData.habitacionId);
+        const ahora = new Date();
+        
+        // Reservas confirmadas para esta habitación (por ID o por mismo número de habitación)
+        const futuras = reservasConfirmadas
+            .filter((r: any) => {
+                const matchId = r.habitacionId === formData.habitacionId;
+                const matchNumero = habSeleccionada?.numero && r.habitacion?.numero === habSeleccionada.numero;
+                return matchId || matchNumero;
+            })
+            .filter((r: any) => new Date(r.fecha_fin).getTime() >= ahora.getTime())
+            .sort((a: any, b: any) => new Date(a.fecha_inicio).getTime() - new Date(b.fecha_inicio).getTime());
+
+        const res = futuras[0];
+        if (!res) return null;
+
+        const inicioRes = new Date(res.fecha_inicio);
+        const diffMs = inicioRes.getTime() - ahora.getTime();
+        const diffHoras = diffMs / (1000 * 60 * 60);
+        const diasHastaReserva = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+        
+        // Es para hoy si inicia en menos de 14 horas o la fecha ya pasó
+        const esHoy = diffHoras <= 14;
+        const numNoches = Number(noches) || 1;
+        const hayConflicto = esHoy || (numNoches > diasHastaReserva);
+
+        return {
+            reserva: res,
+            esHoy,
+            diasHastaReserva,
+            hayConflicto,
+            fechaInicioStr: inicioRes.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            nombreCliente: res.huesped?.nombre || res.nombre || 'Cliente',
+            abono: Number(res.monto_adelanto) || 0,
+        };
+    }, [formData.habitacionId, reservasConfirmadas, habitacionesDisponibles, noches]);
 
     // Autocalcular el Total a Cobrar en base a la habitación y noches seleccionadas
     useEffect(() => {
@@ -109,6 +163,24 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validar conflicto de reserva
+        if (infoReserva?.esHoy) {
+            AlertAdapter.error(
+                'Habitación con Reserva para Hoy',
+                `Esta habitación está reservada para hoy a nombre de "${infoReserva.nombreCliente}". Para registrar su ingreso, utilice el botón "Procesar Check-In" en el módulo de Reservas.`
+            );
+            return;
+        }
+
+        if (infoReserva && infoReserva.hayConflicto) {
+            AlertAdapter.error(
+                'Cruce de Fechas con Reserva',
+                `No puede registrar ${noches} noches porque cruzaría con la reserva confirmada del ${infoReserva.fechaInicioStr}. El máximo disponible para esta habitación es de ${infoReserva.diasHastaReserva} noche(s).`
+            );
+            return;
+        }
+
         setSubmitting(true);
 
         // --- VALIDACIONES DE DÍGITOS ---
@@ -274,13 +346,74 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                                 onChange={(e) => setFormData({ ...formData, habitacionId: e.target.value })}
                             >
                                 <option value="" className="bg-surface text-on-surface">{loadingHabitaciones ? 'Cargando habitaciones...' : 'Seleccione una habitación...'}</option>
-                                {habitacionesDisponibles.map((hab: any) => (
-                                    <option key={hab.id} value={hab.id} className="bg-surface text-on-surface">
-                                        Habitación {hab.numero} — {hab.tipo || 'Estándar'} (S/. {hab.precio?.toFixed(2)})
-                                    </option>
-                                ))}
+                                {habitacionesDisponibles.map((hab: any) => {
+                                    const tipoLegible = hab.tipo === 'simple' ? 'Habitación Simple' : (hab.tipo === 'matrimonial' || hab.tipo === 'doble' ? 'Habitación Doble' : hab.tipo);
+                                    const extras = [];
+                                    if (hab.dos_camas) extras.push('2 Camas');
+                                    else if (hab.tipo === 'matrimonial' || hab.tipo === 'doble') extras.push('1 Cama');
+                                    if (hab.aire_acondicionado) extras.push('Aire');
+                                    if (hab.ventilador) extras.push('Ventilador');
+                                    const extrasText = extras.length > 0 ? ` (${extras.join('/')})` : '';
+
+                                    // Badge de reserva próxima (por ID o por número físico de habitación)
+                                    const resRoom = reservasConfirmadas.find((r: any) => {
+                                        const matchId = r.habitacionId === hab.id;
+                                        const matchNumero = hab.numero && r.habitacion?.numero === hab.numero;
+                                        return (matchId || matchNumero) && new Date(r.fecha_fin) >= new Date();
+                                    });
+                                    let badgeTexto = '';
+                                    if (resRoom) {
+                                        const diffH = (new Date(resRoom.fecha_inicio).getTime() - Date.now()) / 3600000;
+                                        if (diffH <= 14) {
+                                            badgeTexto = ' ⚠️ [Reservada HOY]';
+                                        } else {
+                                            const fechaFmt = new Date(resRoom.fecha_inicio).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+                                            badgeTexto = ` 📅 [Reserva: ${fechaFmt}]`;
+                                        }
+                                    }
+
+                                    return (
+                                        <option key={hab.id} value={hab.id} className="bg-surface text-on-surface font-medium">
+                                            Habitación {hab.numero} — {tipoLegible}{extrasText} — S/. {Number(hab.precio)?.toFixed(2)}{badgeTexto}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
+
+                        {/* ALERTAS DE RESERVAS Y CRUCE DE FECHAS */}
+                        {infoReserva?.esHoy && (
+                            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs space-y-1.5 animate-fade-in">
+                                <div className="flex items-center gap-1.5 font-bold text-red-600 dark:text-red-400">
+                                    <ShieldAlert className="h-4 w-4 shrink-0" />
+                                    <span>Habitación con Reserva Confirmada para Hoy</span>
+                                </div>
+                                <p className="text-on-surface-variant text-[11px] leading-relaxed">
+                                    Esta habitación está reservada para hoy a nombre de <strong>"{infoReserva.nombreCliente}"</strong> (con abono de <strong>S/. {infoReserva.abono.toFixed(2)}</strong>). Para ingresar a este cliente con su anticipo, use el botón <strong>Procesar Check-In</strong> en el módulo de <strong>Reservas</strong>.
+                                </p>
+                            </div>
+                        )}
+
+                        {infoReserva && !infoReserva.esHoy && infoReserva.hayConflicto && (
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg text-xs space-y-1.5 animate-fade-in">
+                                <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-amber-400">
+                                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                                    <span>Conflicto de Fechas con Reserva Próxima</span>
+                                </div>
+                                <p className="text-on-surface-variant text-[11px] leading-relaxed">
+                                    La habitación tiene una reserva confirmada a partir del <strong>{infoReserva.fechaInicioStr}</strong> (en {infoReserva.diasHastaReserva} días). No puede registrar <strong>{noches} noches</strong> porque cruzaría con la reserva. <strong>Máximo disponible: {infoReserva.diasHastaReserva} noche(s).</strong>
+                                </p>
+                            </div>
+                        )}
+
+                        {infoReserva && !infoReserva.esHoy && !infoReserva.hayConflicto && (
+                            <div className="p-2.5 bg-primary/5 border border-primary/20 rounded-lg text-xs flex items-center gap-2 animate-fade-in text-on-surface-variant">
+                                <Info className="h-4 w-4 text-primary shrink-0" />
+                                <span className="text-[11px]">
+                                    Esta habitación tiene una reserva programada para el <strong>{infoReserva.fechaInicioStr}</strong> ({infoReserva.diasHastaReserva} noche(s) libres disponibles sin cruce).
+                                </span>
+                            </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
@@ -291,7 +424,10 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                                     type="number"
                                     required
                                     min="1"
-                                    className="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                    max={infoReserva && !infoReserva.esHoy ? infoReserva.diasHastaReserva : undefined}
+                                    className={`rounded-md border bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
+                                        infoReserva?.hayConflicto ? 'border-red-500 bg-red-500/5' : 'border-outline-variant'
+                                    }`}
                                     value={noches}
                                     onChange={(e) => setNoches(e.target.value.replace(/\D/g, ''))}
                                 />
@@ -361,8 +497,12 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                         </button>
                         <button
                             type="submit"
-                            disabled={submitting}
-                            className="px-5 py-2 text-sm font-bold bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] rounded-md transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                            disabled={submitting || Boolean(infoReserva?.hayConflicto)}
+                            className={`px-5 py-2 text-sm font-bold rounded-md transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer ${
+                                infoReserva?.hayConflicto
+                                    ? 'bg-outline-variant text-on-surface-variant opacity-60 cursor-not-allowed'
+                                    : 'bg-primary text-on-primary hover:opacity-90 active:scale-[0.98]'
+                            }`}
                         >
                             {submitting ? 'Procesando...' : 'Completar Check-In'}
                         </button>

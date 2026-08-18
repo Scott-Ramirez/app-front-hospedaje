@@ -19,6 +19,7 @@ import { UsuariosPanel } from './presentation/views/UsuariosPanel';
 import { AuditoriaCaja } from './presentation/views/AuditoriaCaja';
 import { ReportesPanel } from './presentation/views/ReportesPanel';
 import { BandejaNotificaciones } from './presentation/views/BandejaNotificaciones';
+import { ReservasPanel } from './presentation/views/ReservasPanel';
 
 // Importaciones de Filtros de Seguridad / Guards de Sesión
 import { ProtectedRoute } from './presentation/components/guards/ProtectedRoute';
@@ -74,7 +75,8 @@ function App() {
 
                 {/* 🌟 CAPA 3: Rutas con acceso extendido al Recepcionista */}
                 <Route element={<RoleGuard rolesPermitidos={['admin', 'supervisor', 'recepcionista']} />}>
-                  <Route path="/estancias" element={<EstanciasActivas />} /> {/* 🌟 ACTUALIZADO: Ruta de estancias inyectada con éxito */}
+                  <Route path="/estancias" element={<EstanciasActivas />} />
+                  <Route path="/reservas" element={<ReservasPanel />} />
                   <Route path="/habitaciones" element={<HabitacionesCRUD />} />
                   <Route path="/huespedes" element={<HuespedesCRUD />} /> 
                   <Route path="/historial" element={<HistorialSalidas />} />

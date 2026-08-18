@@ -20,7 +20,15 @@ export const useEstancias = (estadoInicial?: string) => {
     if (!silencioso) setLoading(true);
     try {
       const resultado = await estanciasRepository.listar(filtroEstado, paginaActual);
-      setEstancias(resultado.data);
+      const ordenadas = [...(resultado.data || [])].sort((a, b) => {
+        const numA = parseInt((a.habitacion?.numero || '').replace(/\D/g, ''), 10);
+        const numB = parseInt((b.habitacion?.numero || '').replace(/\D/g, ''), 10);
+        if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+          return numA - numB;
+        }
+        return (a.habitacion?.numero || '').localeCompare(b.habitacion?.numero || '', undefined, { numeric: true, sensitivity: 'base' });
+      });
+      setEstancias(ordenadas);
       setTotalItems(resultado.total);
     } catch (error: any) {
       console.error('Error cargando estancias:', error);

@@ -15,7 +15,8 @@ import isotipoDark from '../../assets/isotipo-dark.png';
 
 import { 
   LayoutDashboard, 
-  CalendarDays, 
+  Luggage,
+  CalendarClock, 
   BedDouble, 
   Users, 
   History, 
@@ -66,7 +67,8 @@ export const MainLayout = () => {
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" /> },
-    { label: 'Estancias Activas', path: '/estancias', icon: <CalendarDays className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Estancias Activas', path: '/estancias', icon: <Luggage className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Reservas', path: '/reservas', icon: <CalendarClock className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Habitaciones', path: '/habitaciones', icon: <BedDouble className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Huéspedes', path: '/huespedes', icon: <Users className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Historial', path: '/historial', icon: <History className="h-5 w-5 flex-shrink-0" /> },

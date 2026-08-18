@@ -16,6 +16,8 @@ interface NotificationContextProps {
   notificaciones: AlertaLimpieza[];
   conteoNoLeidas: number;
   marcarComoLeida: (id: string) => void;
+  marcarComoNoLeida: (id: string) => void;
+  eliminarNotificacion: (id: string) => void;
   limpiarTodas: () => void;
 }
 
@@ -340,12 +342,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
   };
 
+  const marcarComoNoLeida = (id: string) => {
+    setNotificaciones((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, leido: false } : n))
+    );
+  };
+
+  const eliminarNotificacion = (id: string) => {
+    setNotificaciones((prev) => prev.filter((n) => n.id !== id));
+  };
+
   const limpiarTodas = () => {
     setNotificaciones([]);
   };
 
   return (
-    <NotificationContext.Provider value={{ notificaciones, conteoNoLeidas, marcarComoLeida, limpiarTodas }}>
+    <NotificationContext.Provider value={{ notificaciones, conteoNoLeidas, marcarComoLeida, marcarComoNoLeida, eliminarNotificacion, limpiarTodas }}>
       {children}
     </NotificationContext.Provider>
   );

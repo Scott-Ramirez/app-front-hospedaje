@@ -121,10 +121,10 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
     .filter(([_, value]) => value > 0)
     .map(([tipo, value]) => {
       const tipoEstilos: { [k: string]: { label: string; color: string } } = {
-        simple: { label: 'Simple', color: '#006b4d' },
-        matrimonial: { label: 'Matrimonial', color: '#6366f1' },
-        doble: { label: 'Doble', color: '#10b981' },
-        triple: { label: 'Triple', color: '#f97316' },
+        simple: { label: 'Habitación Simple', color: '#006b4d' },
+        matrimonial: { label: 'Habitación Doble', color: '#6366f1' },
+        doble: { label: 'Habitación Doble', color: '#6366f1' },
+        triple: { label: 'Habitación Triple', color: '#f97316' },
       };
       const info = tipoEstilos[tipo.toLowerCase()] || { label: tipo, color: '#6b7280' };
       return {

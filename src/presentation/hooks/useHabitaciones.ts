@@ -6,6 +6,17 @@ import { AlertAdapter } from '../../core/adapters/alert.adapter';
 
 const habitacionesRepo = new HabitacionesRepository();
 
+export const ordenarHabitacionesPorNumero = <T extends { numero?: string }>(lista: T[]): T[] => {
+    return [...lista].sort((a, b) => {
+        const numA = parseInt((a.numero || '').replace(/\D/g, ''), 10);
+        const numB = parseInt((b.numero || '').replace(/\D/g, ''), 10);
+        if (!isNaN(numA) && !isNaN(numB) && numA !== numB) {
+            return numA - numB;
+        }
+        return (a.numero || '').localeCompare(b.numero || '', undefined, { numeric: true, sensitivity: 'base' });
+    });
+};
+
 export const useHabitaciones = () => {
     const [habitaciones, setHabitaciones] = useState<HabitacionDTO[]>([]);
     const [cargando, setCargando] = useState<boolean>(true);
@@ -20,6 +31,7 @@ export const useHabitaciones = () => {
         aire_acondicionado: false,
         wifi: true,
         ventilador: false,
+        dos_camas: false,
         precio: 0,
     });
 
@@ -30,11 +42,13 @@ export const useHabitaciones = () => {
             const data = await habitacionesRepo.listarTodas();
             
             // Si el backend no tiene habitaciones registradas, devuelve un objeto descriptivo con data: []
+            let lista: HabitacionDTO[] = [];
             if (data && !Array.isArray(data) && Array.isArray((data as any).data)) {
-                setHabitaciones((data as any).data);
+                lista = (data as any).data;
             } else {
-                setHabitaciones(Array.isArray(data) ? data : []);
+                lista = Array.isArray(data) ? data : [];
             }
+            setHabitaciones(ordenarHabitacionesPorNumero(lista));
         } catch (err: any) {
             console.error('Error al obtener habitaciones:', err);
             setError(err?.message || 'Network Error');
@@ -58,7 +72,7 @@ export const useHabitaciones = () => {
 
     const handleNuevoClick = () => {
         setEditandoId(null);
-        setForm({ numero: '', tipo: 'simple', aire_acondicionado: false, wifi: true, ventilador: false, precio: 0 });
+        setForm({ numero: '', tipo: 'simple', aire_acondicionado: false, wifi: true, ventilador: false, dos_camas: false, precio: 0 });
         setModalAbierto(true);
     };
 
@@ -77,7 +91,8 @@ export const useHabitaciones = () => {
                 precio: Number(form.precio),
                 aire_acondicionado: Boolean(form.aire_acondicionado),
                 wifi: Boolean(form.wifi),
-                ventilador: Boolean(form.ventilador)
+                ventilador: Boolean(form.ventilador),
+                dos_camas: Boolean(form.dos_camas)
             };
 
             if (editandoId) {
