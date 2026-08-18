@@ -45,23 +45,21 @@ export interface EstanciaResponse {
 
 export const estanciasRepository = {
   /**
-   * Obtiene la lista de estancias activas filtrando opcionalmente por estado.
+   * Obtiene la lista completa de estancias activas filtrando opcionalmente por estado.
    * Conecta con GET /estancias
    */
-  async listar(estado?: string, page: number = 1): Promise<{ data: EstanciaResponse[]; total: number }> {
-    const params: any = { page };
+  async listar(estado?: string, page?: number, limit?: number): Promise<{ data: EstanciaResponse[]; total: number }> {
+    const params: any = {};
     if (estado) params.estado = estado;
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
 
-    // 🌟 Usamos 'api' en lugar de 'apiAdapter'
     const response = await api.get<EstanciaResponse[]>('/estancias', { params });
     const data = Array.isArray(response.data) ? response.data : [];
     
-    // Paginación inteligente ficticia ya que la API retorna array plano
-    const total = data.length === 5 ? (page * 5 + 1) : ((page - 1) * 5 + data.length);
-
     return {
       data,
-      total
+      total: data.length
     };
   },
 

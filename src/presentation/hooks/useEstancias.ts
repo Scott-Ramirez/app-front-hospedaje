@@ -19,7 +19,7 @@ export const useEstancias = (estadoInicial?: string) => {
   const cargarEstancias = useCallback(async (silencioso = false) => {
     if (!silencioso) setLoading(true);
     try {
-      const resultado = await estanciasRepository.listar(filtroEstado, paginaActual);
+      const resultado = await estanciasRepository.listar(filtroEstado);
       const ordenadas = [...(resultado.data || [])].sort((a, b) => {
         const numA = parseInt((a.habitacion?.numero || '').replace(/\D/g, ''), 10);
         const numB = parseInt((b.habitacion?.numero || '').replace(/\D/g, ''), 10);
@@ -38,7 +38,7 @@ export const useEstancias = (estadoInicial?: string) => {
     } finally {
       if (!silencioso) setLoading(false);
     }
-  }, [filtroEstado, paginaActual]);
+  }, [filtroEstado]);
 
   // Ejecutar recarga al cambiar filtros o página
   useEffect(() => {
