@@ -135,141 +135,163 @@ export const ReportesTablaDetalle: React.FC<ReportesTablaDetalleProps> = ({ data
     });
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 print-leaderboard-grid">
+    <div className="space-y-6">
       
-      {/* Húspedes Frecuentes */}
-      <div className="lg:col-span-2 bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col print-card">
-        <div className="flex items-center gap-2 mb-4">
-          <Users className="h-4 w-4 text-primary" />
-          <h3 className="font-bold text-sm text-on-surface">Top 5 de Huéspedes Frecuentes</h3>
-        </div>
-
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-left border-collapse text-xs md:text-sm">
-            <thead>
-              <tr className="border-b border-outline-variant text-[11px] font-bold text-on-surface-variant uppercase tracking-wider select-none">
-                <th className="py-2.5 px-3 text-center w-12">Pos</th>
-                <th className="py-2.5 px-3">Nombre Huésped</th>
-                <th className="py-2.5 px-3 text-center">DNI / Documento</th>
-                <th className="py-2.5 px-3 text-center">N° Visitas</th>
-                <th className="py-2.5 px-3 text-right">Inversión Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-outline-variant/40 font-medium">
-              {dataFiltrada.rankingHuespedes.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="text-center py-10 text-on-surface-variant/60 font-medium">
-                    No hay registros de estancias finalizadas en este periodo para rankear.
-                  </td>
-                </tr>
-              ) : (
-                dataFiltrada.rankingHuespedes.map((h, idx) => (
-                  <tr key={h.dni} className="hover:bg-surface-container-low/10 transition-colors">
-                    <td className="py-2.5 px-3 text-center">
-                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-black ${
-                        idx === 0 
-                          ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-400/30' 
-                          : idx === 1 
-                          ? 'bg-zinc-300 text-zinc-900' 
-                          : idx === 2 
-                          ? 'bg-orange-300 text-orange-950'
-                          : 'bg-surface-container text-on-surface-variant'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 font-semibold text-on-surface capitalize">{h.nombre}</td>
-                    <td className="py-2.5 px-3 text-center text-on-surface-variant font-mono">{h.dni}</td>
-                    <td className="py-2.5 px-3 text-center font-bold text-primary">{h.visitas} estancias</td>
-                    <td className="py-2.5 px-3 text-right font-black text-on-surface">S/. {h.totalGastado.toFixed(2)}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-[10px] text-on-surface-variant mt-4 font-medium italic">
-          * El ranking de fidelización clasifica a los huéspedes con mayor recurrencia e inversión económica acumulada durante el periodo elegido.
-        </p>
-      </div>
-
-      {/* Métodos de Pago con Barras de Progreso */}
-      <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
-        <div>
-          <div className="flex items-center justify-between border-b border-outline-variant/60 pb-2.5 mb-4">
-            <div className="flex items-center gap-2">
-              <Coins className="h-5 w-5 text-primary" />
+      {/* SECCIÓN SUPERIOR: Top 5 Huéspedes (Izquierda amplia) + Métodos de Pago y Demanda por Tipo (Derecha apilada) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 print-leaderboard-grid">
+        
+        {/* Top 5 Huéspedes Frecuentes - Columna Ancha (7 de 12 en lg, 8 de 12 en xl) */}
+        <div className="lg:col-span-7 xl:col-span-8 bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
+          <div>
+            <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/60 pb-3">
+              <Users className="h-4.5 w-4.5 text-primary" />
               <div>
-                <h3 className="font-bold text-sm text-on-surface">Métodos de Pago</h3>
-                <p className="text-[10px] text-on-surface-variant">Desglose por barra de progreso</p>
+                <h3 className="font-bold text-sm text-on-surface">Top 5 de Huéspedes Frecuentes</h3>
+                <p className="text-[11px] text-on-surface-variant">Huéspedes con mayor recurrencia e inversión económica acumulada</p>
               </div>
             </div>
-            <span className="text-[10px] font-black font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-              S/. {dataFiltrada.ingresosTotales.toFixed(2)}
-            </span>
-          </div>
 
-          {metodosSegments.length === 0 ? (
-            <div className="h-32 flex items-center justify-center text-xs text-on-surface-variant/40 border border-dashed border-outline-variant/40 rounded-xl bg-surface-container/20">
-              Sin transacciones registradas
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs md:text-sm">
+                <thead>
+                  <tr className="border-b border-outline-variant text-[11px] font-bold text-on-surface-variant uppercase tracking-wider select-none bg-surface-container-low/40">
+                    <th className="py-2.5 px-3 text-center w-12 rounded-l-lg">Pos</th>
+                    <th className="py-2.5 px-4">Nombre Huésped</th>
+                    <th className="py-2.5 px-3 text-center">DNI / Documento</th>
+                    <th className="py-2.5 px-3 text-center">N° Visitas</th>
+                    <th className="py-2.5 px-4 text-right rounded-r-lg">Inversión Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/40 font-medium">
+                  {dataFiltrada.rankingHuespedes.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-10 text-on-surface-variant/60 font-medium">
+                        No hay registros de estancias finalizadas en este periodo para rankear.
+                      </td>
+                    </tr>
+                  ) : (
+                    dataFiltrada.rankingHuespedes.map((h, idx) => (
+                      <tr key={h.dni} className="hover:bg-surface-container-low/20 transition-colors">
+                        <td className="py-3 px-3 text-center">
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-black shadow-xs ${
+                            idx === 0 
+                              ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-400/30' 
+                              : idx === 1 
+                              ? 'bg-zinc-300 text-zinc-900' 
+                              : idx === 2 
+                              ? 'bg-orange-300 text-orange-950'
+                              : 'bg-surface-container text-on-surface-variant'
+                          }`}>
+                            {idx + 1}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-bold text-on-surface capitalize">{h.nombre}</td>
+                        <td className="py-3 px-3 text-center text-on-surface-variant font-mono text-xs">{h.dni}</td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
+                            {h.visitas} {h.visitas === 1 ? 'estancia' : 'estancias'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-black text-on-surface text-sm">
+                          S/. {h.totalGastado.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          ) : (
-            <div className="space-y-3.5">
-              {metodosSegments.map((seg, idx) => {
-                const percentage = dataFiltrada.ingresosTotales > 0
-                  ? Math.min(100, Math.max(0, (seg.value / dataFiltrada.ingresosTotales) * 100))
-                  : 0;
+          </div>
+          
+          <p className="text-[10px] text-on-surface-variant mt-4 font-medium italic border-t border-outline-variant/40 pt-2.5">
+            * El ranking de fidelización clasifica a los huéspedes con mayor recurrencia e inversión económica acumulada durante el periodo elegido.
+          </p>
+        </div>
 
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs font-bold">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: seg.color }} />
-                        <span className="text-on-surface font-bold capitalize text-xs">{seg.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2 font-mono">
-                        <span className="text-on-surface font-black text-xs">S/. {seg.value.toFixed(2)}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface-container text-on-surface-variant">
-                          {percentage.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                    {/* Barra de progreso */}
-                    <div className="h-2.5 w-full bg-surface-container-high rounded-full overflow-hidden p-0.5 border border-outline-variant/30">
-                      <div
-                        className="h-full rounded-full transition-all duration-500 shadow-xs"
-                        style={{
-                          width: `${percentage}%`,
-                          backgroundColor: seg.color,
-                        }}
-                      />
-                    </div>
+        {/* Columna Derecha: Métodos de Pago + Demanda por Tipo (5 de 12 en lg, 4 de 12 en xl) */}
+        <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-5 justify-between">
+          
+          {/* Métodos de Pago con Barras de Progreso */}
+          <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card flex-1">
+            <div>
+              <div className="flex items-center justify-between border-b border-outline-variant/60 pb-2.5 mb-3.5">
+                <div className="flex items-center gap-2">
+                  <Coins className="h-4.5 w-4.5 text-primary" />
+                  <div>
+                    <h3 className="font-bold text-sm text-on-surface">Métodos de Pago</h3>
+                    <p className="text-[10px] text-on-surface-variant">Desglose por barra de progreso</p>
                   </div>
-                );
-              })}
+                </div>
+                <span className="text-[10px] font-black font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                  S/. {dataFiltrada.ingresosTotales.toFixed(2)}
+                </span>
+              </div>
+
+              {metodosSegments.length === 0 ? (
+                <div className="h-28 flex items-center justify-center text-xs text-on-surface-variant/40 border border-dashed border-outline-variant/40 rounded-xl bg-surface-container/20">
+                  Sin transacciones registradas
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {metodosSegments.map((seg, idx) => {
+                    const percentage = dataFiltrada.ingresosTotales > 0
+                      ? Math.min(100, Math.max(0, (seg.value / dataFiltrada.ingresosTotales) * 100))
+                      : 0;
+
+                    return (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs font-bold">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2.5 w-2.5 rounded-full shrink-0 shadow-xs" style={{ backgroundColor: seg.color }} />
+                            <span className="text-on-surface font-bold capitalize text-xs">{seg.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="text-on-surface font-black text-xs">S/. {seg.value.toFixed(2)}</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-surface-container text-on-surface-variant">
+                              {percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                        {/* Barra de progreso */}
+                        <div className="h-2 w-full bg-surface-container-high rounded-full overflow-hidden p-0.5 border border-outline-variant/30">
+                          <div
+                            className="h-full rounded-full transition-all duration-500 shadow-xs"
+                            style={{
+                              width: `${percentage}%`,
+                              backgroundColor: seg.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Ocupación por Categoría */}
-      <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card">
-        <div className="flex items-center gap-2 mb-3 border-b border-outline-variant/60 pb-2.5">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <div>
-            <h3 className="font-bold text-sm text-on-surface">Demanda por Tipo</h3>
-            <p className="text-[10px] text-on-surface-variant">Preferencias de habitaciones</p>
           </div>
+
+          {/* Ocupación por Categoría (Donut Chart) */}
+          <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col justify-between print-card flex-1">
+            <div className="flex items-center gap-2 mb-2 border-b border-outline-variant/60 pb-2.5">
+              <BarChart3 className="h-4.5 w-4.5 text-primary" />
+              <div>
+                <h3 className="font-bold text-sm text-on-surface">Demanda por Tipo</h3>
+                <p className="text-[10px] text-on-surface-variant">Preferencias de habitaciones</p>
+              </div>
+            </div>
+            <DonutChart 
+              segments={categoriaSegments} 
+              formatValue={(val) => `${val} salidas`}
+              centerLabel="Salidas"
+            />
+          </div>
+
         </div>
-        <DonutChart 
-          segments={categoriaSegments} 
-          formatValue={(val) => `${val} salidas`}
-          centerLabel="Salidas"
-        />
+
       </div>
 
-      {/* Bitácora de Auditoría de Cajas */}
-      <div className="lg:col-span-4 bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col print-card mt-2">
+      {/* Bitácora de Auditoría de Cajas (Ancho Completo) */}
+      <div className="bg-surface-lowest rounded-2xl border border-outline-variant p-5 shadow-xs flex flex-col print-card">
         <div className="flex items-center gap-2 mb-4 border-b border-outline-variant/65 pb-3.5">
           <BookOpen className="h-5 w-5 text-primary" />
           <div>
