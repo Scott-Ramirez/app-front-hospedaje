@@ -89,26 +89,15 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   const deudaProgramada = Number(Math.max(0, totalProgramado - totalPagos).toFixed(2));
   const porcentajePagado = totalProgramado > 0 ? Math.min(100, (totalPagos / totalProgramado) * 100) : 100;
 
-  // Simular check-out para el día de hoy considerando la hora de corte (13:00 hrs)
+  // Simular check-out para el día de hoy
   const getDiasSiCheckOutHoy = () => {
     if (!estancia?.fecha_entrada) return 1;
-    const inicioLima = new Date(new Date(estancia.fecha_entrada).toLocaleString('en-US', { timeZone: 'America/Lima' }));
-    const ahoraLima = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
-
-    const fechaCorteHoy = new Date(ahoraLima);
-    fechaCorteHoy.setHours(13, 0, 0, 0);
-
-    const d1 = new Date(inicioLima);
+    const d1 = new Date(new Date(estancia.fecha_entrada).toLocaleString('en-US', { timeZone: 'America/Lima' }));
+    const d2 = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
     d1.setHours(0, 0, 0, 0);
-
-    const d2 = new Date(ahoraLima);
     d2.setHours(0, 0, 0, 0);
-
-    let diasCalendario = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
-    if (ahoraLima >= fechaCorteHoy) {
-      diasCalendario += 1;
-    }
-    return Math.max(1, diasCalendario);
+    const diffMs = d2.getTime() - d1.getTime();
+    return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
   };
 
   const esFinalizado = estancia.estado === 'finalizado';
