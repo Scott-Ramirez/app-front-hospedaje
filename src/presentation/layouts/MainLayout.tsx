@@ -155,7 +155,7 @@ export const MainLayout = () => {
         </nav>        {/* Pie del Sidebar */}
         <div className="mt-auto px-3 pt-3 pb-1 text-center select-none border-t border-outline-variant/40">
           <span className={`inline-block px-2.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/60 text-[9px] font-bold tracking-wider text-primary ${isCollapsed ? 'scale-90' : ''}`}>
-            {import.meta.env.VITE_APP_VERSION || '1.0.0'}
+            {import.meta.env.VITE_APP_VERSION || 'v1.1.0'}
           </span>
           {!isCollapsed && (
             <p className="text-[10px] text-on-surface-variant/60 font-medium mt-1.5">
