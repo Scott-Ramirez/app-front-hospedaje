@@ -102,5 +102,13 @@ export const estanciasRepository = {
   async registrarPago(id: string, datos: { monto: number; metodoPago: string; concepto?: string }): Promise<any> {
     const response = await api.post(`/estancias/${id}/pago`, datos);
     return response.data;
+  },
+
+  /**
+   * Amplía la estadía hasta una nueva fecha de salida y registra el cobro de días adelantados.
+   */
+  async extenderEstadia(id: string, datos: { nuevaFechaSalida: string; diasAdicionales?: number; monto?: number; metodoPago?: string; concepto?: string }): Promise<any> {
+    const response = await api.post(`/estancias/${id}/extender`, datos);
+    return response.data;
   }
 };
