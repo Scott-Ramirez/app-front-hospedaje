@@ -21,6 +21,8 @@ import {
   Building2,
   Wallet,
   Image as ImageIcon,
+  Briefcase,
+  KeyRound,
 } from 'lucide-react';
 import { api } from '../../../data/adapters/api.adapter';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
@@ -664,9 +666,20 @@ export const LiquidacionMensualPanel: React.FC = () => {
               </tr>
             `).join('')}
             <tr style="background: #f1f5f9;">
-              <td colspan="5" class="text-right font-bold">Total Check-Outs del Mes:</td>
+              <td colspan="5" class="text-right font-bold">Subtotal por Check-Outs Concluidos:</td>
               <td class="text-right font-bold" style="color:#006b4d;">S/. ${totalCobradoCheckouts.toFixed(2)}</td>
             </tr>
+            ${totalCobradoPagos > totalCobradoCheckouts ? `
+            <tr style="background: #e6f4ea;">
+              <td colspan="5" class="text-right font-bold" style="color:#006b4d;">Total Recaudado en Recepción (Cobranzas del Mes):</td>
+              <td class="text-right font-bold" style="color:#006b4d;">S/. ${totalCobradoPagos.toFixed(2)}</td>
+            </tr>
+            <tr style="background: #f8fafc; font-size: 8.5px; color: #64748b;">
+              <td colspan="6" class="text-right">
+                * Nota: El total recaudado en caja y canales digitales (S/. ${totalCobradoPagos.toFixed(2)}) incluye anticipos y pagos de estancias en curso. El subtotal de check-outs concluidos corresponde a S/. ${totalCobradoCheckouts.toFixed(2)}.
+              </td>
+            </tr>
+            ` : ''}
           </tbody>
         </table>
 
@@ -769,7 +782,7 @@ export const LiquidacionMensualPanel: React.FC = () => {
         {/* 1. TOTAL INGRESOS */}
         <div className="p-4 bg-surface border border-outline-variant rounded-2xl shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Ingresos</span>
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Total Ingresos Recaudados</span>
             <div className="p-2 rounded-xl bg-primary/10 text-primary">
               <DollarSign className="h-5 w-5" />
             </div>
@@ -777,9 +790,14 @@ export const LiquidacionMensualPanel: React.FC = () => {
           <p className="text-2xl font-black text-primary mt-2">
             S/. {totalIngresosBrutos.toFixed(2)}
           </p>
-          <span className="text-[11px] text-on-surface-variant">
-            {checkOutsMes.length} check-outs concluidos
-          </span>
+          <div className="text-[11px] text-on-surface-variant flex items-center justify-between mt-1">
+            <span>{pagosMes.length} cobros en recepción</span>
+            {checkOutsMes.length > 0 && (
+              <span className="text-[10px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                {checkOutsMes.length} check-outs
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 2. GASTOS DE TURNO / CAJA CHICA */}
@@ -843,8 +861,8 @@ export const LiquidacionMensualPanel: React.FC = () => {
               <Wallet className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                💵 Efectivo Físico Recaudado
+              <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                Efectivo Físico Recaudado
               </span>
               <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                 S/. {totalEfectivo.toFixed(2)}
@@ -863,8 +881,8 @@ export const LiquidacionMensualPanel: React.FC = () => {
               <Smartphone className="h-6 w-6" />
             </div>
             <div>
-              <span className="text-xs font-black text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
-                📱 Canales Digitales (Yape / Plin / Bancos)
+              <span className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                Canales Digitales (Yape / Plin / Bancos)
               </span>
               <p className="text-2xl font-black text-purple-600 dark:text-purple-400 mt-0.5">
                 S/. {totalDigital.toFixed(2)}
@@ -911,35 +929,38 @@ export const LiquidacionMensualPanel: React.FC = () => {
         <div className="flex border-b border-outline-variant pb-2 gap-2 flex-wrap">
           <button
             onClick={() => setSubTab('gastos_admin')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               subTab === 'gastos_admin'
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
             }`}
           >
-            👷 Gastos de Fin de Mes (Personal y Servicios) ({gastosAdministrativos.length})
+            <Briefcase className="h-3.5 w-3.5" />
+            Gastos de Fin de Mes (Personal y Servicios) ({gastosAdministrativos.length})
           </button>
 
           <button
             onClick={() => setSubTab('pagos_yape')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               subTab === 'pagos_yape'
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
             }`}
           >
-            📱 Cobranzas y Pagos Yape / Plin / Efectivo ({pagosMes.length})
+            <CreditCard className="h-3.5 w-3.5" />
+            Cobranzas y Canales Digitales ({pagosMes.length})
           </button>
           
           <button
             onClick={() => setSubTab('checkouts')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
               subTab === 'checkouts'
                 ? 'bg-primary text-on-primary shadow-sm'
                 : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
             }`}
           >
-            🚪 Huéspedes y Check-Outs ({checkOutsMes.length})
+            <KeyRound className="h-3.5 w-3.5" />
+            Huéspedes y Check-Outs ({checkOutsMes.length})
           </button>
         </div>
 
@@ -996,12 +1017,12 @@ export const LiquidacionMensualPanel: React.FC = () => {
                         : 'bg-zinc-500/10 text-zinc-600 border-zinc-500/30';
                       
                       const catLabel = g.categoria === 'personal'
-                        ? '👷 Personal'
+                        ? 'Personal'
                         : g.categoria === 'servicios'
-                        ? '💡 Servicios'
+                        ? 'Servicios'
                         : g.categoria === 'mantenimiento'
-                        ? '🔧 Mantenimiento'
-                        : '📦 Otros';
+                        ? 'Mantenimiento'
+                        : 'Otros';
 
                       return (
                         <tr key={g.id} className="hover:bg-surface-container-low transition-colors">

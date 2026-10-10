@@ -63,7 +63,7 @@ export const HuespedesCRUD: React.FC = () => {
     const huespedesPaginados = listaSegura.slice(indiceInicial, indiceFinal);
 
     return (
-        <div className="p-6 max-w-[1280px] mx-auto text-on-surface">
+        <div className="w-full text-on-surface space-y-6">
 
             {/* HEADER */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">

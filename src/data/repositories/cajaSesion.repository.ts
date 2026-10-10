@@ -11,6 +11,8 @@ export interface CajaSesionResponse {
   monto_ingresos_digital?: number;
   monto_egresos: number;
   monto_real_entregado?: number | null;
+  monto_entregado_admin?: number | null;
+  monto_dejado_caja?: number | null;
   descuadre?: number | null;
   estado: 'abierta' | 'cerrada';
   observaciones?: string | null;
@@ -24,6 +26,16 @@ export interface CajaSesionResponse {
   };
 }
 
+export interface UltimoCierreInfo {
+  ultimoMontoCierre: number;
+  montoEntregadoAdmin: number;
+  montoDejadoCaja: number;
+  montoRealEntregado: number;
+  tieneTurnoPrevio: boolean;
+  nombreUsuarioCierre?: string;
+  fechaCierre?: string;
+}
+
 export const cajaSesionRepository = {
   async abrir(montoInicial: number): Promise<CajaSesionResponse> {
     const { data } = await api.post<CajaSesionResponse>('/caja-sesiones/abrir', { montoInicial });
@@ -35,8 +47,18 @@ export const cajaSesionRepository = {
     return data;
   },
 
-  async cerrar(montoReal: number, observaciones?: string): Promise<CajaSesionResponse> {
-    const { data } = await api.post<CajaSesionResponse>('/caja-sesiones/cerrar', { montoReal, observaciones });
+  async cerrar(
+    montoReal: number, 
+    observaciones?: string,
+    montoEntregadoAdmin?: number,
+    montoDejadoCaja?: number
+  ): Promise<CajaSesionResponse> {
+    const { data } = await api.post<CajaSesionResponse>('/caja-sesiones/cerrar', { 
+      montoReal, 
+      observaciones,
+      montoEntregadoAdmin,
+      montoDejadoCaja
+    });
     return data;
   },
 
@@ -47,9 +69,9 @@ export const cajaSesionRepository = {
     return data;
   },
 
-  async obtenerUltimoCierre(): Promise<number> {
-    const { data } = await api.get<{ ultimoMontoCierre: number }>('/caja-sesiones/ultimo-cierre');
-    return data.ultimoMontoCierre ?? 0;
+  async obtenerUltimoCierre(): Promise<UltimoCierreInfo> {
+    const { data } = await api.get<UltimoCierreInfo>('/caja-sesiones/ultimo-cierre');
+    return data;
   },
 
   async listarPagos(): Promise<any[]> {

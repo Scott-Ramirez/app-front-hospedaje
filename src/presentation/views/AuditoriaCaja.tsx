@@ -60,7 +60,7 @@ export const AuditoriaCaja: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-[1200px] mx-auto text-on-surface space-y-6 select-none animate-fade-in">
+    <div className="w-full text-on-surface space-y-6 select-none animate-fade-in">
       
       {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -163,7 +163,19 @@ export const AuditoriaCaja: React.FC = () => {
                         
                         <td className="p-4 text-right font-mono font-bold">
                           {t.monto_real_entregado !== null && t.monto_real_entregado !== undefined ? (
-                            `S/. ${Number(t.monto_real_entregado).toFixed(2)}`
+                            <div>
+                              <p>S/. {Number(t.monto_real_entregado).toFixed(2)}</p>
+                              {Number(t.monto_entregado_admin || 0) > 0 && (
+                                <span className="text-[9px] text-primary block font-semibold" title="Entregado a Administración">
+                                  Admin: S/. {Number(t.monto_entregado_admin).toFixed(2)}
+                                </span>
+                              )}
+                              {t.monto_dejado_caja !== null && t.monto_dejado_caja !== undefined ? (
+                                <span className={`text-[9px] block font-semibold ${Number(t.monto_dejado_caja) > 0 ? 'text-emerald-600' : 'text-on-surface-variant'}`} title="Dejado en gaveta para el siguiente turno">
+                                  Gaveta: S/. {Number(t.monto_dejado_caja).toFixed(2)}
+                                </span>
+                              ) : null}
+                            </div>
                           ) : (
                             '-'
                           )}

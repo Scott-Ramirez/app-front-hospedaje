@@ -27,7 +27,95 @@ interface AdminDashboardViewProps {
 
 export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ data, porcentajeOcupacion }) => {
   const { resumen, alertas } = data;
-  const { totalGastos, actividades, pagos } = useBitacora();
+  const { actividades, pagos, gastos } = useBitacora();
+
+  // Estados para filtro de período contable
+  const [periodoFiltro, setPeriodoFiltro] = useState<'mes_actual' | 'mes_anterior' | 'historico'>('mes_actual');
+  
+  // Mes actual y mes anterior
+  const ahora = new Date();
+  const mesActual = ahora.getMonth();
+  const anioActual = ahora.getFullYear();
+
+  const fechaMesAnterior = new Date(anioActual, mesActual - 1, 1);
+  const mesAnterior = fechaMesAnterior.getMonth();
+  const anioMesAnterior = fechaMesAnterior.getFullYear();
+
+  const mesesNombres = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const nombreMesActual = `${mesesNombres[mesActual]} ${anioActual}`;
+  const nombreMesAnterior = `${mesesNombres[mesAnterior]} ${anioMesAnterior}`;
+
+  // 1. Mes actual
+  const pagosMesActual = React.useMemo(() => pagos.filter((p: any) => {
+    if (!p.fecha) return false;
+    const d = new Date(p.fecha);
+    return d.getMonth() === mesActual && d.getFullYear() === anioActual;
+  }), [pagos, mesActual, anioActual]);
+
+  const gastosMesActual = React.useMemo(() => gastos.filter((g: any) => {
+    if (!g.fecha) return false;
+    const d = new Date(g.fecha);
+    return d.getMonth() === mesActual && d.getFullYear() === anioActual;
+  }), [gastos, mesActual, anioActual]);
+
+  const ingresosMesActual = React.useMemo(() => pagosMesActual.reduce((sum: number, p: any) => sum + Number(p.monto || 0), 0), [pagosMesActual]);
+  const egresosMesActual = React.useMemo(() => gastosMesActual.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0), [gastosMesActual]);
+  const balanceMesActual = ingresosMesActual - egresosMesActual;
+
+  // 2. Mes anterior
+  const pagosMesAnterior = React.useMemo(() => pagos.filter((p: any) => {
+    if (!p.fecha) return false;
+    const d = new Date(p.fecha);
+    return d.getMonth() === mesAnterior && d.getFullYear() === anioMesAnterior;
+  }), [pagos, mesAnterior, anioMesAnterior]);
+
+  const gastosMesAnterior = React.useMemo(() => gastos.filter((g: any) => {
+    if (!g.fecha) return false;
+    const d = new Date(g.fecha);
+    return d.getMonth() === mesAnterior && d.getFullYear() === anioMesAnterior;
+  }), [gastos, mesAnterior, anioMesAnterior]);
+
+  const ingresosMesAnterior = React.useMemo(() => pagosMesAnterior.reduce((sum: number, p: any) => sum + Number(p.monto || 0), 0), [pagosMesAnterior]);
+  const egresosMesAnterior = React.useMemo(() => gastosMesAnterior.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0), [gastosMesAnterior]);
+  const balanceMesAnterior = ingresosMesAnterior - egresosMesAnterior;
+
+  // 3. Total histórico
+  const ingresosHistorico = React.useMemo(() => pagos.reduce((sum: number, p: any) => sum + Number(p.monto || 0), 0), [pagos]);
+  const egresosHistorico = React.useMemo(() => gastos.reduce((sum: number, g: any) => sum + Number(g.monto || 0), 0), [gastos]);
+  const balanceHistorico = ingresosHistorico - egresosHistorico;
+
+  // Cifras a mostrar según el selector
+  const { ingresosMostrados, egresosMostrados, balanceMostrado, etiquetaPeriodo, descripcionSubtexto } = React.useMemo(() => {
+    if (periodoFiltro === 'mes_actual') {
+      return {
+        ingresosMostrados: ingresosMesActual,
+        egresosMostrados: egresosMesActual,
+        balanceMostrado: balanceMesActual,
+        etiquetaPeriodo: `Mes Actual (${nombreMesActual})`,
+        descripcionSubtexto: `Generado en ${nombreMesActual} (se reinicia al cerrar el mes)`,
+      };
+    }
+    if (periodoFiltro === 'mes_anterior') {
+      return {
+        ingresosMostrados: ingresosMesAnterior,
+        egresosMostrados: egresosMesAnterior,
+        balanceMostrado: balanceMesAnterior,
+        etiquetaPeriodo: `Mes Anterior (${nombreMesAnterior})`,
+        descripcionSubtexto: `Cierre contable de ${nombreMesAnterior}`,
+      };
+    }
+    return {
+      ingresosMostrados: ingresosHistorico,
+      egresosMostrados: egresosHistorico,
+      balanceMostrado: balanceHistorico,
+      etiquetaPeriodo: 'Acumulado Histórico Total',
+      descripcionSubtexto: 'Total histórico consolidado de todos los períodos',
+    };
+  }, [periodoFiltro, ingresosMesActual, egresosMesActual, balanceMesActual, ingresosMesAnterior, egresosMesAnterior, balanceMesAnterior, ingresosHistorico, egresosHistorico, balanceHistorico, nombreMesActual, nombreMesAnterior]);
 
   const estanciasVencidasAdmin = React.useMemo(() => {
     const lista = alertas.huespedesPorDesocupar || [];
@@ -42,24 +130,74 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ data, po
     paginaSalidas * itemsPorPagina
   );
 
-  const totalIngresos = pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
-  const balanceNeto = totalIngresos - totalGastos;
-
   return (
     <div className="space-y-8">
       
       {/* SECCIÓN 1: BENTO FINANCIERO */}
       <div className="space-y-3">
-        <h3 className="text-xs font-black uppercase tracking-wider text-on-surface-variant">Resumen de Caja y Flujo de Fondos</h3>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-wider text-on-surface-variant flex items-center gap-2">
+              <Coins className="h-4 w-4 text-primary" />
+              Resumen de Caja y Flujo de Fondos
+            </h3>
+            <p className="text-[11px] text-on-surface-variant">
+              Mostrando: <span className="font-bold text-primary">{etiquetaPeriodo}</span>
+            </p>
+          </div>
+
+          {/* Selector de Período */}
+          <div className="flex items-center bg-surface-lowest border border-outline-variant p-1 rounded-xl gap-1 text-xs shadow-xs">
+            <button
+              type="button"
+              onClick={() => setPeriodoFiltro('mes_actual')}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                periodoFiltro === 'mes_actual'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50'
+              }`}
+            >
+              Mes Actual
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodoFiltro('mes_anterior')}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                periodoFiltro === 'mes_anterior'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50'
+              }`}
+            >
+              Mes Anterior
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodoFiltro('historico')}
+              className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-all cursor-pointer ${
+                periodoFiltro === 'historico'
+                  ? 'bg-primary text-white shadow-xs'
+                  : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-variant/50'
+              }`}
+            >
+              Total Histórico
+            </button>
+          </div>
+        </div>
+
+        {/* Tarjetas Bento */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-sm relative overflow-hidden group">
             <div className="absolute right-[-10px] bottom-[-10px] text-green-500/5 group-hover:scale-110 transition-transform duration-300">
               <Coins className="h-28 w-28" />
             </div>
             <div className="space-y-1 relative z-10">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Ingresos por Estancias</span>
-              <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">S/. {totalIngresos.toFixed(2)}</h3>
-              <p className="text-[9px] text-on-surface-variant">Total recaudado por adelantos, abonos y checkouts</p>
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                Ingresos por Estancias {periodoFiltro === 'mes_actual' ? `(${mesesNombres[mesActual]})` : periodoFiltro === 'mes_anterior' ? `(${mesesNombres[mesAnterior]})` : 'Totales'}
+              </span>
+              <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                S/. {ingresosMostrados.toFixed(2)}
+              </h3>
+              <p className="text-[9px] text-on-surface-variant">{descripcionSubtexto}</p>
             </div>
             <div className="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl shrink-0 relative z-10">
               <TrendingUp className="h-6 w-6" />
@@ -71,8 +209,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ data, po
               <TrendingDown className="h-28 w-28" />
             </div>
             <div className="space-y-1 relative z-10">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Egresos / Gastos</span>
-              <h3 className="text-2xl font-black text-error">S/. {totalGastos.toFixed(2)}</h3>
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                Egresos / Gastos {periodoFiltro === 'mes_actual' ? `(${mesesNombres[mesActual]})` : periodoFiltro === 'mes_anterior' ? `(${mesesNombres[mesAnterior]})` : 'Totales'}
+              </span>
+              <h3 className="text-2xl font-black text-error">
+                S/. {egresosMostrados.toFixed(2)}
+              </h3>
               <p className="text-[9px] text-on-surface-variant font-medium">Registrados en la bitácora de caja</p>
             </div>
             <div className="p-3 bg-error/10 text-error rounded-xl shrink-0 relative z-10">
@@ -85,15 +227,38 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ data, po
               <Activity className="h-28 w-28" />
             </div>
             <div className="space-y-1 relative z-10">
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Flujo Neto en Caja</span>
-              <h3 className={`text-2xl font-black ${balanceNeto >= 0 ? 'text-primary' : 'text-error'}`}>
-                S/. {balanceNeto.toFixed(2)}
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                Flujo Neto en Caja {periodoFiltro === 'mes_actual' ? `(${mesesNombres[mesActual]})` : periodoFiltro === 'mes_anterior' ? `(${mesesNombres[mesAnterior]})` : 'Total'}
+              </span>
+              <h3 className={`text-2xl font-black ${balanceMostrado >= 0 ? 'text-primary' : 'text-error'}`}>
+                S/. {balanceMostrado.toFixed(2)}
               </h3>
-              <p className="text-[9px] text-on-surface-variant">Caja disponible real calculada</p>
+              <p className="text-[9px] text-on-surface-variant">Caja disponible neta calculada</p>
             </div>
-            <div className={`p-3 rounded-xl shrink-0 relative z-10 ${balanceNeto >= 0 ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'}`}>
+            <div className={`p-3 rounded-xl shrink-0 relative z-10 ${balanceMostrado >= 0 ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'}`}>
               <Activity className="h-6 w-6" />
             </div>
+          </div>
+        </div>
+
+        {/* Barra comparativa mensual */}
+        <div className="bg-surface-lowest border border-outline-variant px-4 py-2.5 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-on-surface-variant shadow-xs">
+          <div className="flex items-center gap-2">
+            <History className="h-3.5 w-3.5 text-primary" />
+            <span className="font-bold text-[11px] uppercase tracking-wider">Comparador Rápido:</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-4 text-[11px]">
+            <span className={periodoFiltro === 'mes_actual' ? 'font-bold text-primary underline underline-offset-4' : ''}>
+              📅 Mes Actual ({mesesNombres[mesActual]}): <strong className={balanceMesActual >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-error'}>S/. {balanceMesActual.toFixed(2)}</strong>
+            </span>
+            <span className="text-outline-variant">|</span>
+            <span className={periodoFiltro === 'mes_anterior' ? 'font-bold text-primary underline underline-offset-4' : ''}>
+              ⏮️ Mes Anterior ({mesesNombres[mesAnterior]}): <strong className={balanceMesAnterior >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-error'}>S/. {balanceMesAnterior.toFixed(2)}</strong>
+            </span>
+            <span className="text-outline-variant">|</span>
+            <span className={periodoFiltro === 'historico' ? 'font-bold text-primary underline underline-offset-4' : ''}>
+              🌐 Histórico Total: <strong className={balanceHistorico >= 0 ? 'text-primary' : 'text-error'}>S/. {balanceHistorico.toFixed(2)}</strong>
+            </span>
           </div>
         </div>
       </div>

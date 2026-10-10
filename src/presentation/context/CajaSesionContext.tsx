@@ -8,7 +8,12 @@ interface CajaSesionContextProps {
   cajaActiva: CajaSesionResponse | null;
   loadingCaja: boolean;
   abrirCaja: (montoInicial: number) => Promise<boolean>;
-  cerrarCaja: (montoReal: number, observaciones?: string) => Promise<boolean>;
+  cerrarCaja: (
+    montoReal: number, 
+    observaciones?: string,
+    montoEntregadoAdmin?: number,
+    montoDejadoCaja?: number
+  ) => Promise<boolean>;
   verificarCaja: (silencioso?: boolean) => Promise<void>;
 }
 
@@ -62,10 +67,15 @@ export const CajaSesionProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  const cerrarCaja = async (montoReal: number, observaciones?: string): Promise<boolean> => {
+  const cerrarCaja = async (
+    montoReal: number, 
+    observaciones?: string,
+    montoEntregadoAdmin?: number,
+    montoDejadoCaja?: number
+  ): Promise<boolean> => {
     try {
       setLoadingCaja(true);
-      await cajaSesionRepository.cerrar(montoReal, observaciones);
+      await cajaSesionRepository.cerrar(montoReal, observaciones, montoEntregadoAdmin, montoDejadoCaja);
       setCajaActiva(null);
       AlertAdapter.success('Caja Cerrada', 'La sesión del turno finalizó con éxito.');
       

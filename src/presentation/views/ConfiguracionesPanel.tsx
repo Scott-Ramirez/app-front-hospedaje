@@ -92,7 +92,7 @@ export const ConfiguracionesPanel: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-[800px] mx-auto text-on-surface space-y-6">
+    <div className="w-full max-w-[800px] mx-auto text-on-surface space-y-6">
       
       {/* Cabecera */}
       <div className="flex justify-between items-center bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm">

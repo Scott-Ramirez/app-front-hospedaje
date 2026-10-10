@@ -3,7 +3,7 @@ import { useEstancias } from '../hooks/useEstancias';
 import { CheckInModal } from '../components/shared/CheckInModal';
 import { DetalleEstanciaModal } from '../components/shared/DetalleEstanciaModal';
 import { 
-  DoorOpen, 
+  KeyRound,
   UserPlus, 
   Loader2, 
   RefreshCw,
@@ -75,14 +75,14 @@ export const EstanciasActivas = () => {
   const estanciasPaginadas = estanciasFiltradas.slice(indiceInicial, indiceFinal);
 
   return (
-    <div className="space-y-5">
+    <div className="w-full space-y-6 text-on-surface">
       
       {/* CABECERA */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-xl font-bold text-on-surface flex items-center gap-2.5">
             <span className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center">
-              <DoorOpen className="h-4.5 w-4.5 text-primary" />
+              <KeyRound className="h-4.5 w-4.5 text-primary" />
             </span>
             Estancias Activas
           </h2>

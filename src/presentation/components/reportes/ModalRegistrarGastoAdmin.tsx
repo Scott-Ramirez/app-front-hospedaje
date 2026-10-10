@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Receipt, Upload, Trash2, Calendar, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { X, Receipt, Upload, Trash2, Calendar, FileText, Loader2, AlertCircle, Users, Zap, Wrench, Package } from 'lucide-react';
 import { api } from '../../../data/adapters/api.adapter';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
 
@@ -140,10 +140,10 @@ export const ModalRegistrarGastoAdmin: React.FC<ModalRegistrarGastoAdminProps> =
             </label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { key: 'personal', label: '👷 Pago de Personal', desc: 'Planilla, limpieza, recepcionistas' },
-                { key: 'servicios', label: '💡 Servicios Básicos', desc: 'Luz, Agua, Internet, Cable' },
-                { key: 'mantenimiento', label: '🔧 Mantenimiento', desc: 'Pintura, plomería, A/C' },
-                { key: 'otros', label: '📦 Otros Gastos', desc: 'Impuestos, compras mayores' },
+                { key: 'personal', label: 'Pago de Personal', desc: 'Planilla, limpieza, recepcionistas', icon: <Users className="h-3.5 w-3.5 shrink-0" /> },
+                { key: 'servicios', label: 'Servicios Básicos', desc: 'Luz, Agua, Internet, Cable', icon: <Zap className="h-3.5 w-3.5 shrink-0" /> },
+                { key: 'mantenimiento', label: 'Mantenimiento', desc: 'Pintura, plomería, A/C', icon: <Wrench className="h-3.5 w-3.5 shrink-0" /> },
+                { key: 'otros', label: 'Otros Gastos', desc: 'Impuestos, compras mayores', icon: <Package className="h-3.5 w-3.5 shrink-0" /> },
               ].map((cat) => (
                 <button
                   key={cat.key}
@@ -155,7 +155,7 @@ export const ModalRegistrarGastoAdmin: React.FC<ModalRegistrarGastoAdminProps> =
                       : 'border-outline-variant bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
                   }`}
                 >
-                  <p className="text-xs">{cat.label}</p>
+                  <p className="text-xs flex items-center gap-1.5">{cat.icon} <span>{cat.label}</span></p>
                   <p className="text-[10px] text-on-surface-variant/70 font-normal leading-tight mt-0.5">{cat.desc}</p>
                 </button>
               ))}

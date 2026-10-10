@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useCajaSesion } from '../../context/CajaSesionContext';
 import { useAuth } from '../../context/AuthContext';
 import { cajaSesionRepository } from '../../../data/repositories/cajaSesion.repository';
-import { Wallet, LogOut, Loader2, ArrowRight, Info, ArrowDown } from 'lucide-react';
+import type { UltimoCierreInfo } from '../../../data/repositories/cajaSesion.repository';
+import { Wallet, LogOut, Loader2, ArrowRight, Info, ArrowDown, ShieldCheck } from 'lucide-react';
 
 export const AperturaCajaState: React.FC = () => {
   const { abrirCaja } = useCajaSesion();
@@ -10,17 +11,17 @@ export const AperturaCajaState: React.FC = () => {
   
   const [montoInicial, setMontoInicial] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [ultimoCierre, setUltimoCierre] = useState<number | null>(null);
+  const [infoCierre, setInfoCierre] = useState<UltimoCierreInfo | null>(null);
   const [loadingCierre, setLoadingCierre] = useState(true);
 
   // Al montar el componente, consultamos cuánto dejó el turno anterior
   useEffect(() => {
     const fetchUltimoCierre = async () => {
       try {
-        const monto = await cajaSesionRepository.obtenerUltimoCierre();
-        setUltimoCierre(monto);
+        const info = await cajaSesionRepository.obtenerUltimoCierre();
+        setInfoCierre(info);
       } catch {
-        setUltimoCierre(null);
+        setInfoCierre(null);
       } finally {
         setLoadingCierre(false);
       }
@@ -41,9 +42,10 @@ export const AperturaCajaState: React.FC = () => {
     }
   };
 
-  // Diferencia entre lo que declara el nuevo recepcionista y lo que entregó el anterior
+  // Diferencia entre lo que declara el nuevo recepcionista y lo que dejó en caja el anterior
   const montoActual = montoInicial === '' ? null : Number(montoInicial);
-  const diferencia = (montoActual !== null && ultimoCierre !== null) ? montoActual - ultimoCierre : null;
+  const esperadoApertura = infoCierre?.tieneTurnoPrevio ? infoCierre.ultimoMontoCierre : null;
+  const diferencia = (montoActual !== null && esperadoApertura !== null) ? montoActual - esperadoApertura : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/80 backdrop-blur-lg select-none">
@@ -51,7 +53,7 @@ export const AperturaCajaState: React.FC = () => {
       {/* Glow de fondo */}
       <div className="absolute h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
 
-      <div className="bg-surface text-on-surface w-full max-w-md p-8 rounded-3xl shadow-2xl border border-outline-variant/60 relative z-10 flex flex-col items-center text-center space-y-6">
+      <div className="bg-surface text-on-surface w-full max-w-md p-8 rounded-3xl shadow-2xl border border-outline-variant/60 relative z-10 flex flex-col items-center text-center space-y-5">
         
         {/* Icono de Caja */}
         <div className="h-16 w-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
@@ -59,7 +61,7 @@ export const AperturaCajaState: React.FC = () => {
         </div>
 
         {/* Textos Informativos */}
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <h2 className="text-xl font-black tracking-tight text-primary">
             Apertura de Caja — Inicio de Turno
           </h2>
@@ -73,19 +75,34 @@ export const AperturaCajaState: React.FC = () => {
           <div className="w-full flex justify-center py-2">
             <Loader2 className="h-4 w-4 animate-spin text-on-surface-variant" />
           </div>
-        ) : ultimoCierre !== null && ultimoCierre > 0 ? (
-          <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-left space-y-1">
-            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
-              <Info className="h-3.5 w-3.5 shrink-0" />
-              <span>Fondo entregado por el turno anterior</span>
+        ) : infoCierre?.tieneTurnoPrevio ? (
+          infoCierre.ultimoMontoCierre === 0 ? (
+            <div className="w-full bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 text-left space-y-1">
+              <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-wider">
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                <span>Efectivo retirado por Administración</span>
+              </div>
+              <p className="text-2xl font-black font-mono text-blue-600 dark:text-blue-400 mt-0.5">
+                S/. 0.00
+              </p>
+              <p className="text-[10px] text-on-surface-variant font-medium leading-relaxed">
+                {infoCierre.nombreUsuarioCierre || 'El turno anterior'} liquidó su turno entregando S/. {infoCierre.montoEntregadoAdmin.toFixed(2)} al Administrador y dejó la gaveta en S/. 0.00. Si no recibiste un nuevo fondo, declara S/. 0.00.
+              </p>
             </div>
-            <p className="text-2xl font-black font-mono text-amber-600 dark:text-amber-400 mt-1">
-              S/. {ultimoCierre.toFixed(2)}
-            </p>
-            <p className="text-[10px] text-on-surface-variant font-medium leading-relaxed">
-              Este es el monto que dejó el recepcionista del turno anterior en el cajón. Verifica físicamente que coincida antes de declarar tu apertura.
-            </p>
-          </div>
+          ) : (
+            <div className="w-full bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-left space-y-1">
+              <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-bold text-xs uppercase tracking-wider">
+                <Info className="h-4 w-4 shrink-0" />
+                <span>Fondo dejado en gaveta por turno anterior</span>
+              </div>
+              <p className="text-2xl font-black font-mono text-amber-600 dark:text-amber-400 mt-0.5">
+                S/. {infoCierre.ultimoMontoCierre.toFixed(2)}
+              </p>
+              <p className="text-[10px] text-on-surface-variant font-medium leading-relaxed">
+                Dejado por {infoCierre.nombreUsuarioCierre || 'el turno anterior'}{infoCierre.montoEntregadoAdmin > 0 ? ` (entregó S/. ${infoCierre.montoEntregadoAdmin.toFixed(2)} al Administrador)` : ''}. Verifica físicamente que coincida antes de aperturar.
+              </p>
+            </div>
+          )
         ) : (
           <div className="w-full bg-surface-container-low border border-outline-variant/40 rounded-2xl p-4 text-left">
             <div className="flex items-center gap-2 text-on-surface-variant font-bold text-xs uppercase tracking-wider">
@@ -93,15 +110,15 @@ export const AperturaCajaState: React.FC = () => {
               <span>Sin turno previo registrado</span>
             </div>
             <p className="text-[10px] text-on-surface-variant font-medium mt-1 leading-relaxed">
-              No hay un cierre de caja anterior en el sistema. Declara el fondo base inicial asignado para este turno.
+              No hay un cierre de caja anterior registrado. Declara el saldo base en efectivo asignado para este turno.
             </p>
           </div>
         )}
 
         {/* Flecha visual de transición */}
-        {ultimoCierre !== null && ultimoCierre > 0 && (
+        {infoCierre?.tieneTurnoPrevio && (
           <div className="text-on-surface-variant/40">
-            <ArrowDown className="h-5 w-5 mx-auto" />
+            <ArrowDown className="h-4 w-4 mx-auto" />
           </div>
         )}
 
@@ -118,7 +135,7 @@ export const AperturaCajaState: React.FC = () => {
               step="0.01"
               placeholder="0.00"
               autoFocus
-              className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-3 text-lg font-black font-mono outline-none focus:ring-2 focus:ring-primary/20 text-on-surface"
+              className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-4 py-2.5 text-lg font-black font-mono outline-none focus:ring-2 focus:ring-primary/20 text-on-surface"
               value={montoInicial}
               onChange={(e) => setMontoInicial(e.target.value)}
             />
@@ -127,9 +144,9 @@ export const AperturaCajaState: React.FC = () => {
             </span>
           </div>
 
-          {/* Indicador de diferencia vs. turno anterior */}
-          {diferencia !== null && ultimoCierre !== null && ultimoCierre > 0 && (
-            <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
+          {/* Indicador de diferencia vs. fondo esperado */}
+          {diferencia !== null && infoCierre?.tieneTurnoPrevio && (
+            <div className={`p-2.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all ${
               Math.abs(diferencia) < 0.01
                 ? 'bg-green-500/10 border-green-500/20 text-green-600'
                 : diferencia < 0
@@ -138,10 +155,10 @@ export const AperturaCajaState: React.FC = () => {
             }`}>
               <span>
                 {Math.abs(diferencia) < 0.01
-                  ? 'Monto coincide con el turno anterior'
+                  ? 'Monto coincide exactamente con lo esperado'
                   : diferencia < 0
-                  ? `Faltante vs. turno anterior`
-                  : `Sobrante vs. turno anterior`}
+                  ? 'Faltante vs. lo esperado en gaveta'
+                  : 'Sobrante / Fondo adicional entregado'}
               </span>
               {Math.abs(diferencia) >= 0.01 && (
                 <span className="font-mono font-black ml-2">
@@ -155,7 +172,7 @@ export const AperturaCajaState: React.FC = () => {
             <button
               type="button"
               onClick={logout}
-              className="w-full sm:w-auto px-4 py-3 rounded-xl border border-outline-variant hover:bg-surface-container-high transition-colors font-bold text-xs flex items-center justify-center gap-2 text-on-surface-variant cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-outline-variant hover:bg-surface-container-high transition-colors font-bold text-xs flex items-center justify-center gap-2 text-on-surface-variant cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
               <span>Cerrar Sesión</span>
@@ -164,7 +181,7 @@ export const AperturaCajaState: React.FC = () => {
             <button
               type="submit"
               disabled={submitting || montoInicial === ''}
-              className="flex-1 bg-primary text-on-primary font-black text-xs py-3 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="flex-1 bg-primary text-on-primary font-black text-xs py-2.5 rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {submitting ? (
                 <>

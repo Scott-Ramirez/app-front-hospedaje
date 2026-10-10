@@ -2,15 +2,18 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../../data/adapters/api.adapter';
 import { 
-  BarChart3, 
+  BarChart2, 
   FileSpreadsheet, 
-  FileText, 
+  Printer, 
   RefreshCw, 
   Loader2, 
   AlertTriangle,
-  Receipt
+  Receipt,
+  TrendingUp,
+  ArrowDownRight,
+  BadgeCheck,
+  KeyRound
 } from 'lucide-react';
-import { SolesIcon } from '../components/shared/SolesIcon';
 import { AlertAdapter } from '../../core/adapters/alert.adapter';
 import { ReportesGraficoBarras } from '../components/reportes/ReportesGraficoBarras';
 import { ReportesTablaDetalle } from '../components/reportes/ReportesTablaDetalle';
@@ -647,34 +650,39 @@ export const ReportesPanel: React.FC = () => {
   }
 
   return (
-    <div className="p-6 max-w-[1280px] mx-auto text-on-surface space-y-6 select-none print-container">
+    <div className="w-full space-y-6 select-none print-container text-on-surface">
       
-      {/* ─── PESTAÑAS PRINCIPALES DE REPORTES ───────────────────────────────── */}
-      <div className="flex border-b border-outline-variant/60 pb-3 gap-3 no-print items-center justify-between flex-wrap">
-        <div className="flex gap-2">
+      {/* ─── SELECTOR EJECUTIVO DE VISTAS ───────────────────────────────── */}
+      <div className="flex border-b border-outline-variant/60 pb-4 gap-3 no-print items-center justify-between flex-wrap">
+        <div className="flex bg-surface-container-low/80 p-1 rounded-2xl border border-outline-variant/60 shadow-2xs">
           <button
             onClick={() => setSeccionPrincipal('liquidacion')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               seccionPrincipal === 'liquidacion'
-                ? 'bg-primary text-on-primary shadow-md'
-                : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
+                ? 'bg-surface text-primary shadow-xs font-black'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
             <Receipt className="h-4 w-4" />
-            <span>🏢 Liquidación y Cierre Mensual (Para el Dueño)</span>
+            <span>Liquidación y Cierre Mensual</span>
           </button>
 
           <button
             onClick={() => setSeccionPrincipal('estadisticas')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               seccionPrincipal === 'estadisticas'
-                ? 'bg-primary text-on-primary shadow-md'
-                : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant'
+                ? 'bg-surface text-primary shadow-xs font-black'
+                : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
-            <BarChart3 className="h-4 w-4" />
-            <span>📊 Analítica y Gráficos Estadísticos</span>
+            <BarChart2 className="h-4 w-4" />
+            <span>Analítica y Estadísticas Contables</span>
           </button>
+        </div>
+
+        <div className="text-right hidden sm:block">
+          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">Módulo Contable</span>
+          <span className="text-xs font-black text-on-surface">Reportes Financieros</span>
         </div>
       </div>
 
@@ -688,13 +696,15 @@ export const ReportesPanel: React.FC = () => {
         <div className="space-y-6 animate-fade-in">
           
           {/* HEADER DE CONTROL ANALÍTICO */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-outline-variant/60 pb-5 no-print">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant/60 shadow-xs no-print">
             <div>
-              <h2 className="text-2xl font-black tracking-tight text-on-surface flex items-center gap-2">
-                <BarChart3 className="h-6 w-6 text-primary" />
-                Reportes y Estadísticas Contables
+              <h2 className="text-lg font-black tracking-tight text-on-surface flex items-center gap-2">
+                <BarChart2 className="h-5 w-5 text-primary shrink-0" />
+                <span>Rendimiento y Métricas del Hospedaje</span>
               </h2>
-              <p className="text-xs text-on-surface-variant mt-1">Consulte ingresos, egresos, rentabilidad y volumen comercial del hospedaje.</p>
+              <p className="text-xs text-on-surface-variant font-medium mt-0.5">
+                Consolida ingresos por estancias, volumen de huéspedes y rentabilidad neta por período.
+              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -702,7 +712,7 @@ export const ReportesPanel: React.FC = () => {
               <select 
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-                className="bg-surface-lowest text-xs font-bold px-3 py-2 rounded-lg border border-outline-variant outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+                className="bg-surface text-xs font-bold px-3 py-2 rounded-xl border border-outline-variant outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all text-on-surface"
               >
                 {availableYears.map(y => (
                   <option key={y} value={y}>Año {y}</option>
@@ -713,7 +723,7 @@ export const ReportesPanel: React.FC = () => {
               <select 
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-surface-lowest text-xs font-bold px-3 py-2 rounded-lg border border-outline-variant outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
+                className="bg-surface text-xs font-bold px-3 py-2 rounded-xl border border-outline-variant outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer transition-all text-on-surface"
               >
                 <option value="ALL">Todo el Año</option>
                 {NOMBRES_MESES.map((m, idx) => (
@@ -725,17 +735,17 @@ export const ReportesPanel: React.FC = () => {
               <button 
                 onClick={() => fetchReportData(true)}
                 disabled={refreshing}
-                className="p-2 bg-surface hover:bg-surface-container-high rounded-lg border border-outline-variant/65 cursor-pointer disabled:opacity-50"
+                className="p-2 bg-surface hover:bg-surface-container-high rounded-xl border border-outline-variant/70 text-on-surface-variant cursor-pointer disabled:opacity-50 transition-colors"
                 title="Refrescar datos"
               >
-                <RefreshCw className={`h-4 w-4 text-on-surface-variant ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
 
               {/* Exportar */}
               <button 
                 onClick={exportToExcel}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-lg transition-all cursor-pointer shadow-xs"
-                title="Exportar a Microsoft Excel"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
+                title="Descargar hoja de cálculo"
               >
                 <FileSpreadsheet className="h-4 w-4" />
                 <span>Exportar XLS</span>
@@ -744,16 +754,14 @@ export const ReportesPanel: React.FC = () => {
               {/* Imprimir */}
               <button 
                 onClick={handlePrint}
-                className="flex items-center gap-1.5 px-3 py-2 bg-surface-lowest hover:bg-surface-container-high text-on-surface text-xs font-bold rounded-lg border border-outline-variant cursor-pointer transition-all"
-                title="Imprimir reporte en PDF / Papel"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-surface hover:bg-surface-container-high text-on-surface text-xs font-bold rounded-xl border border-outline-variant cursor-pointer transition-all shadow-xs"
+                title="Imprimir informe en PDF / Físico"
               >
-                <FileText className="h-4 w-4 text-primary" />
+                <Printer className="h-4 w-4 text-primary" />
                 <span>Imprimir</span>
               </button>
             </div>
           </div>
-
-          {/* FIN DEL PANEL DE CONTROL */}
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/25 p-4 rounded-xl flex items-start gap-3 no-print">
@@ -773,50 +781,81 @@ export const ReportesPanel: React.FC = () => {
             </p>
           </div>
 
-          {/* KPIs DE CABECERA */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 print-kpis-grid">
-            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Check-outs Realizados</span>
-                <h3 className="text-2xl font-black">{dataFiltrada.totalEstancias} estancias</h3>
-                <p className="text-[9px] text-on-surface-variant font-medium">
-                  {dataFiltrada.mayorDemandaTexto} · Ocupación: {dataFiltrada.porcentajeOcupacion.toFixed(1)}%
+          {/* KPIs DE CABECERA BENTO */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print-kpis-grid">
+            
+            {/* 1. CHECKOUTS */}
+            <div className="bg-surface border border-outline-variant/60 p-4 rounded-2xl shadow-xs space-y-2 print-kpi">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Check-Outs Realizados</span>
+                <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                  <KeyRound className="h-4 w-4" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-on-surface tracking-tight">
+                  {dataFiltrada.totalEstancias} <span className="text-xs font-semibold text-on-surface-variant">estancias</span>
+                </h3>
+                <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
+                  {dataFiltrada.mayorDemandaTexto} · Ocupación {dataFiltrada.porcentajeOcupacion.toFixed(1)}%
                 </p>
               </div>
             </div>
 
-            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Ingresos por Estancias</span>
-                <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                  <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
-                  {dataFiltrada.ingresosTotales.toFixed(2)}
+            {/* 2. INGRESOS */}
+            <div className="bg-surface border border-outline-variant/60 p-4 rounded-2xl shadow-xs space-y-2 print-kpi">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Ingresos Totales</span>
+                <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                  S/. {dataFiltrada.ingresosTotales.toFixed(2)}
                 </h3>
-                <p className="text-[9px] text-on-surface-variant font-medium">{dataFiltrada.promedioIngresoTexto}</p>
+                <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
+                  {dataFiltrada.promedioIngresoTexto}
+                </p>
               </div>
             </div>
 
-            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Gastos / Retiros Aprobados</span>
-                <h3 className="text-2xl font-black text-error">
-                  <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
-                  {dataFiltrada.egresosTotales.toFixed(2)}
+            {/* 3. GASTOS */}
+            <div className="bg-surface border border-outline-variant/60 p-4 rounded-2xl shadow-xs space-y-2 print-kpi">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Egresos / Gastos</span>
+                <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-600">
+                  <ArrowDownRight className="h-4 w-4" />
+                </div>
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-error tracking-tight">
+                  S/. {dataFiltrada.egresosTotales.toFixed(2)}
                 </h3>
-                <p className="text-[9px] text-on-surface-variant font-medium">Insumos y compras del hospedaje</p>
+                <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
+                  Insumos, compras y caja chica
+                </p>
               </div>
             </div>
 
-            <div className="bg-surface-lowest border border-outline-variant p-5 rounded-2xl flex items-center justify-between shadow-xs print-kpi">
-              <div className="space-y-1">
+            {/* 4. UTILIDAD */}
+            <div className="bg-surface border border-outline-variant/60 p-4 rounded-2xl shadow-xs space-y-2 print-kpi">
+              <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Utilidad Contable Neta</span>
-                <h3 className={`text-2xl font-black ${dataFiltrada.utilidadNeta >= 0 ? 'text-primary' : 'text-error'}`}>
-                  <SolesIcon className="h-4.5 w-4.5 inline mr-1" />
-                  {dataFiltrada.utilidadNeta.toFixed(2)}
+                <div className={`p-1.5 rounded-lg ${dataFiltrada.utilidadNeta >= 0 ? 'bg-primary/10 text-primary' : 'bg-rose-500/10 text-rose-600'}`}>
+                  <BadgeCheck className="h-4 w-4" />
+                </div>
+              </div>
+              <div>
+                <h3 className={`text-2xl font-black tracking-tight ${dataFiltrada.utilidadNeta >= 0 ? 'text-primary' : 'text-error'}`}>
+                  S/. {dataFiltrada.utilidadNeta.toFixed(2)}
                 </h3>
-                <p className="text-[9px] text-on-surface-variant">Diferencia neta ingresos vs egresos</p>
+                <p className="text-[10px] text-on-surface-variant font-medium mt-0.5">
+                  Margen neto ingresos vs egresos
+                </p>
               </div>
             </div>
+
           </div>
 
           {/* GRÁFICOS ANALÍTICOS */}

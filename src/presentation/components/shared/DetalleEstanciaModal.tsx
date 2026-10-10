@@ -36,6 +36,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   // Estados para ampliación de estadía
   const [diasAdicionales, setDiasAdicionales] = useState<number>(1);
   const [fechaSalidaInput, setFechaSalidaInput] = useState<string>('');
+  const [tarifaNocheAmpliacion, setTarifaNocheAmpliacion] = useState<string>('');
   const [metodoPagoAmpliacion, setMetodoPagoAmpliacion] = useState<string>('efectivo');
   const [archivoEvidenciaAmpliacion, setArchivoEvidenciaAmpliacion] = useState<File | null>(null);
   const [submittingAmpliacion, setSubmittingAmpliacion] = useState(false);
@@ -118,6 +119,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       nueva.setDate(nueva.getDate() + 1);
       nueva.setHours(13, 0, 0, 0);
       setFechaSalidaInput(nueva.toISOString().split('T')[0]);
+      setTarifaNocheAmpliacion(String(estancia.precio_noche ?? estancia.habitacion?.precio ?? ''));
 
       // Si la deuda es 0, activar directamente la pestaña de ampliar estadía
       const totalProg = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
@@ -131,7 +133,9 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
   if (!isOpen || !estancia) return null;
 
-  const precioHabitacion = Number(estancia.habitacion?.precio || 0);
+  const precioHabitacion = Number(estancia.precio_noche ?? estancia.habitacion?.precio ?? 0);
+  const precioOriginalCatalogo = Number(estancia.habitacion?.precio ?? 0);
+  const tieneTarifaPactada = Boolean(estancia.precio_noche && Number(estancia.precio_noche) !== precioOriginalCatalogo);
   const totalProgramado = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
   const deudaProgramada = Number(Math.max(0, totalProgramado - totalPagos).toFixed(2));
   const porcentajePagado = totalProgramado > 0 ? Math.min(100, (totalPagos / totalProgramado) * 100) : 100;
@@ -159,7 +163,8 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   nuevaFechaCalculada.setDate(nuevaFechaCalculada.getDate() + diasAdicionales);
   nuevaFechaCalculada.setHours(13, 0, 0, 0);
 
-  const costoAmpliacion = Number((diasAdicionales * precioHabitacion).toFixed(2));
+  const precioEfectivoAmpliacion = Number(tarifaNocheAmpliacion) > 0 ? Number(tarifaNocheAmpliacion) : precioHabitacion;
+  const costoAmpliacion = Number((diasAdicionales * precioEfectivoAmpliacion).toFixed(2));
 
   // Manejador de botones rápidos de días
   const handleSeleccionarDiasRapidos = (dias: number) => {
@@ -224,6 +229,7 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
         diasAdicionales,
         monto: costoAmpliacion,
         metodoPago: metodoPagoAmpliacion,
+        nuevoPrecioNoche: precioEfectivoAmpliacion,
         concepto: `Ampliación de estadía (+${diasAdicionales} noche(s) hasta ${formatFechaCorta(nuevaFechaCalculada)})`
       });
 
@@ -327,9 +333,16 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                   <p className="text-[11px] text-on-surface-variant capitalize">{estancia.habitacion?.tipo || 'Estándar'}</p>
                 </div>
               </div>
-              <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
-                S/. {precioHabitacion.toFixed(2)}<span className="font-normal text-on-surface-variant">/noche</span>
-              </span>
+              <div className="flex items-center gap-1.5">
+                {tieneTarifaPactada && (
+                  <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                    Tarifa Pactada
+                  </span>
+                )}
+                <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
+                  S/. {precioHabitacion.toFixed(2)}<span className="font-normal text-on-surface-variant">/noche</span>
+                </span>
+              </div>
             </div>
 
             {/* Métricas de estancia en fila */}
@@ -535,11 +548,11 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                   </div>
                 </div>
 
-                {/* Selector de Fecha de Salida Exacta */}
-                <div className="grid grid-cols-2 gap-3 items-center">
+                {/* Selector de Fecha de Salida Exacta, Tarifa Noche y Método de Pago */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-center">
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5 text-primary" /> Nueva Fecha Salida
+                      <Calendar className="h-3.5 w-3.5 text-primary" /> Nueva Salida
                     </label>
                     <input
                       type="date"
@@ -547,19 +560,35 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                       value={fechaSalidaInput}
                       onChange={handleDateInputChange}
                       min={new Date(fechaBaseActual.getTime() + 86400000).toISOString().split('T')[0]}
-                      className="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface cursor-pointer"
+                      className="w-full bg-surface border border-outline-variant rounded-lg px-2.5 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1 text-left">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide flex items-center justify-between">
+                      <span>Tarifa/Noche (S/.)</span>
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      step="0.01"
+                      value={tarifaNocheAmpliacion}
+                      onChange={(e) => setTarifaNocheAmpliacion(e.target.value)}
+                      className="w-full bg-surface border border-outline-variant rounded-lg px-2.5 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface"
+                      placeholder={precioHabitacion.toFixed(2)}
                     />
                   </div>
 
                   <div className="flex flex-col gap-1 text-left">
                     <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide flex items-center gap-1">
-                      <Hash className="h-3.5 w-3.5 text-primary" /> Método de Pago
+                      <Hash className="h-3.5 w-3.5 text-primary" /> Método Pago
                     </label>
                     <select
                       required
                       value={metodoPagoAmpliacion}
                       onChange={(e) => setMetodoPagoAmpliacion(e.target.value)}
-                      className="w-full bg-surface border border-outline-variant rounded-lg px-3 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface cursor-pointer capitalize"
+                      className="w-full bg-surface border border-outline-variant rounded-lg px-2 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface cursor-pointer capitalize"
                     >
                       <option value="efectivo">Efectivo</option>
                       <option value="yape">Yape</option>
@@ -606,7 +635,10 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                     <span className="font-black text-primary">{formatFechaCorta(nuevaFechaCalculada)} (1:00 PM)</span>
                   </div>
                   <div className="border-t border-outline-variant/40 pt-2 flex items-center justify-between">
-                    <span className="text-xs font-bold text-on-surface">Total por {diasAdicionales} {diasAdicionales === 1 ? 'noche' : 'noches'}:</span>
+                    <div>
+                      <span className="text-xs font-bold text-on-surface">Total por {diasAdicionales} {diasAdicionales === 1 ? 'noche' : 'noches'}:</span>
+                      <span className="text-[10px] text-on-surface-variant block font-medium">Tarifa: S/. {precioEfectivoAmpliacion.toFixed(2)} / noche</span>
+                    </div>
                     <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
                       S/. {costoAmpliacion.toFixed(2)}
                     </span>

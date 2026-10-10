@@ -179,7 +179,7 @@ export const ReservasPanel: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-[1400px] mx-auto text-on-surface">
+    <div className="w-full text-on-surface space-y-6">
       
       {/* HEADER PRINCIPAL */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

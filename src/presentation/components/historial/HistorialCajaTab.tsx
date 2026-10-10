@@ -13,7 +13,8 @@ import {
   TrendingUp, 
   TrendingDown, 
   ChevronLeft, 
-  ChevronRight 
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
 
 interface HistorialCajaTabProps {
@@ -24,6 +25,9 @@ interface HistorialCajaTabProps {
   setFiltroCaja: (v: string) => void;
   tipoCajaFiltro: 'TODOS' | 'INGRESO' | 'EGRESO';
   setTipoCajaFiltro: (v: 'TODOS' | 'INGRESO' | 'EGRESO') => void;
+  periodoCaja: 'MES_ACTUAL' | 'HOY' | 'HISTORICO';
+  setPeriodoCaja: (v: 'MES_ACTUAL' | 'HOY' | 'HISTORICO') => void;
+  nombrePeriodo: string;
   recargarBitacora: () => void;
   loadingBitacora: boolean;
   flujoCajaConsolidado: any[];
@@ -45,6 +49,9 @@ export const HistorialCajaTab: React.FC<HistorialCajaTabProps> = ({
   setFiltroCaja,
   tipoCajaFiltro,
   setTipoCajaFiltro,
+  periodoCaja,
+  setPeriodoCaja,
+  nombrePeriodo,
   recargarBitacora,
   loadingBitacora,
   flujoCajaConsolidado,
@@ -81,7 +88,65 @@ export const HistorialCajaTab: React.FC<HistorialCajaTabProps> = ({
   const paginasTotalesCaja = Math.ceil(filtrados.length / limitCaja) || 1;
 
   return (
-    <>
+    <div className="space-y-4">
+      {/* ─── SELECTOR EJECUTIVO DE PERÍODO (MES ACTUAL POR DEFECTO) ─────────── */}
+      <div className="bg-surface-lowest border border-outline-variant/80 rounded-2xl p-3.5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-primary/10 text-primary shrink-0">
+            <Calendar className="h-4 w-4" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider block">
+              Período de Caja Visualizado
+            </span>
+            <span className="text-xs font-black text-on-surface capitalize flex items-center gap-1.5 mt-0.5">
+              {nombrePeriodo}
+              {periodoCaja === 'MES_ACTUAL' && (
+                <span className="px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold">
+                  En curso
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex bg-surface-container rounded-xl p-1 border border-outline-variant/40 select-none self-stretch sm:self-auto justify-center">
+          <button
+            type="button"
+            onClick={() => { setPeriodoCaja('MES_ACTUAL'); setPaginaCaja(1); }}
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              periodoCaja === 'MES_ACTUAL'
+                ? 'bg-surface text-primary shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Mes Actual
+          </button>
+          <button
+            type="button"
+            onClick={() => { setPeriodoCaja('HOY'); setPaginaCaja(1); }}
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              periodoCaja === 'HOY'
+                ? 'bg-surface text-primary shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Hoy
+          </button>
+          <button
+            type="button"
+            onClick={() => { setPeriodoCaja('HISTORICO'); setPaginaCaja(1); }}
+            className={`flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+              periodoCaja === 'HISTORICO'
+                ? 'bg-surface text-primary shadow-xs'
+                : 'text-on-surface-variant hover:text-on-surface'
+            }`}
+          >
+            Histórico Global
+          </button>
+        </div>
+      </div>
+
       {/* KPI cards — clickeables para ver desglose */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card Ingresos */}
@@ -93,7 +158,9 @@ export const HistorialCajaTab: React.FC<HistorialCajaTabProps> = ({
             <Coins className="h-24 w-24" />
           </div>
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Total Ingresos Recaudados</span>
+            <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+              Total Ingresos Recaudados {periodoCaja === 'MES_ACTUAL' ? '(Mes)' : ''}
+            </span>
             <div className="flex items-center gap-1.5">
               <span className="text-[9px] font-bold text-emerald-600/70 uppercase tracking-wide opacity-0 group-hover:opacity-100 transition-opacity">Ver detalle</span>
               <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg group-hover:bg-emerald-500/20 transition-colors">
@@ -104,7 +171,7 @@ export const HistorialCajaTab: React.FC<HistorialCajaTabProps> = ({
           <div>
             <p className="text-2xl font-black text-emerald-600 leading-none">S/. {totalIngresos.toFixed(2)}</p>
             <p className="text-[10px] text-on-surface-variant mt-2 font-medium">
-              {pagos.length} pago{pagos.length !== 1 ? 's' : ''} · Toca para ver desglose
+              {pagos.length} cobro{pagos.length !== 1 ? 's' : ''} de recepción · Toca para ver desglose
             </p>
           </div>
         </button>
@@ -308,6 +375,6 @@ export const HistorialCajaTab: React.FC<HistorialCajaTabProps> = ({
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };

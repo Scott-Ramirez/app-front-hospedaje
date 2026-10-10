@@ -48,7 +48,7 @@ export const Dashboard: React.FC = () => {
   if (!data) return null;
 
   return (
-    <div className="p-6 max-w-[1280px] mx-auto text-on-surface space-y-8 select-none">
+    <div className="w-full text-on-surface space-y-8 select-none">
       
       {/* HEADER DE BIENVENIDA */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

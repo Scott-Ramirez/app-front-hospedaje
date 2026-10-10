@@ -95,9 +95,67 @@ export const HistorialSalidas: React.FC = () => {
     } catch { return fechaStr; }
   };
 
-  const totalIngresos = pagos.reduce((sum, p) => sum + Number(p.monto || 0), 0);
+  const NOMBRES_MESES = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const ahora = new Date();
+  const mesActual = ahora.getMonth();
+  const anioActual = ahora.getFullYear();
+
+  const [periodoCaja, setPeriodoCaja] = useState<'MES_ACTUAL' | 'HOY' | 'HISTORICO'>('MES_ACTUAL');
+
+  const esMismoDia = (fechaStr: string) => {
+    try {
+      const d = new Date(fechaStr);
+      return (
+        d.getDate() === ahora.getDate() &&
+        d.getMonth() === ahora.getMonth() &&
+        d.getFullYear() === ahora.getFullYear()
+      );
+    } catch {
+      return false;
+    }
+  };
+
+  const esMismoMes = (fechaStr: string) => {
+    try {
+      const d = new Date(fechaStr);
+      return d.getMonth() === mesActual && d.getFullYear() === anioActual;
+    } catch {
+      return false;
+    }
+  };
+
+  const pagosFiltrados = React.useMemo(() => {
+    if (periodoCaja === 'HISTORICO') return pagos;
+    if (periodoCaja === 'HOY') return pagos.filter((p) => esMismoDia(p.fecha));
+    return pagos.filter((p) => esMismoMes(p.fecha));
+  }, [pagos, periodoCaja, mesActual, anioActual]);
+
+  const gastosFiltrados = React.useMemo(() => {
+    if (periodoCaja === 'HISTORICO') return gastos;
+    if (periodoCaja === 'HOY') return gastos.filter((g) => esMismoDia(g.fecha));
+    return gastos.filter((g) => esMismoMes(g.fecha));
+  }, [gastos, periodoCaja, mesActual, anioActual]);
+
+  const totalIngresos = React.useMemo(() => {
+    return pagosFiltrados.reduce((sum, p) => sum + Number(p.monto || 0), 0);
+  }, [pagosFiltrados]);
+
+  const totalGastosPeriodo = React.useMemo(() => {
+    return gastosFiltrados.reduce((sum, g) => sum + Number(g.monto || 0), 0);
+  }, [gastosFiltrados]);
+
   const totalLiquidadoSalidas = registros.reduce((sum, r) => sum + (r.montoTotalPagado || 0), 0);
-  const saldoCaja = totalIngresos - totalGastos;
+  const saldoCaja = totalIngresos - totalGastosPeriodo;
+
+  const nombrePeriodo = React.useMemo(() => {
+    if (periodoCaja === 'MES_ACTUAL') return `${NOMBRES_MESES[mesActual]} ${anioActual}`;
+    if (periodoCaja === 'HOY') return 'Jornada de Hoy';
+    return 'Acumulado Histórico Global';
+  }, [periodoCaja, mesActual, anioActual]);
 
   const renderModalDetalle = () => {
     if (!modalDetalle) return null;
@@ -111,10 +169,10 @@ export const HistorialSalidas: React.FC = () => {
 
     if (modalDetalle === 'ingresos') {
       titulo = 'Detalle de Ingresos';
-      subtitulo = 'Todos los pagos y abonos recaudados en caja';
+      subtitulo = `Pagos y abonos recaudados en caja (${nombrePeriodo})`;
       colorTotal = 'text-emerald-600';
       iconoTotal = <ArrowUpRight className="h-4 w-4" />;
-      items = pagos.map(p => ({
+      items = pagosFiltrados.map(p => ({
         id: p.id,
         etiqueta: `Hab. ${p.estancia?.habitacion?.numero || 'S/N'}  ·  ${p.huesped?.nombre || 'Huésped'}`,
         concepto: p.concepto || 'Abono / Pago de estancia',
@@ -126,10 +184,10 @@ export const HistorialSalidas: React.FC = () => {
       total = totalIngresos;
     } else if (modalDetalle === 'egresos') {
       titulo = 'Detalle de Egresos';
-      subtitulo = 'Todos los gastos y retiros aprobados';
+      subtitulo = `Gastos y retiros aprobados (${nombrePeriodo})`;
       colorTotal = 'text-red-600';
       iconoTotal = <ArrowDownRight className="h-4 w-4" />;
-      items = gastos.map(g => ({
+      items = gastosFiltrados.map(g => ({
         id: g.id,
         etiqueta: g.usuario,
         concepto: g.concepto,
@@ -138,14 +196,14 @@ export const HistorialSalidas: React.FC = () => {
         evidenciaUrl: undefined,
         metodoPago: undefined,
       }));
-      total = totalGastos;
+      total = totalGastosPeriodo;
     } else {
       titulo = 'Resumen de Saldo en Caja';
-      subtitulo = 'Ingresos vs. Egresos';
+      subtitulo = `Ingresos vs. Egresos (${nombrePeriodo})`;
       colorTotal = saldoCaja >= 0 ? 'text-primary' : 'text-red-600';
       iconoTotal = <Scale className="h-4 w-4" />;
       items = [
-        ...pagos.map(p => ({
+        ...pagosFiltrados.map(p => ({
           id: `i-${p.id}`,
           etiqueta: `Hab. ${p.estancia?.habitacion?.numero || 'S/N'}  ·  ${p.huesped?.nombre || 'Huésped'}`,
           concepto: p.concepto || 'Abono / Pago de estancia',
@@ -154,7 +212,7 @@ export const HistorialSalidas: React.FC = () => {
           evidenciaUrl: p.evidenciaUrl,
           metodoPago: p.metodoPago,
         })),
-        ...gastos.map(g => ({
+        ...gastosFiltrados.map(g => ({
           id: `e-${g.id}`,
           etiqueta: g.usuario,
           concepto: g.concepto,
@@ -268,7 +326,7 @@ export const HistorialSalidas: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-[1280px] mx-auto text-on-surface space-y-6">
+    <div className="w-full text-on-surface space-y-6">
       
       {/* HEADER + TABS SELECTOR */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-outline-variant/60 pb-5">
@@ -356,22 +414,25 @@ export const HistorialSalidas: React.FC = () => {
       {activeTab === 'caja' && usuario?.rol !== 'recepcionista' && (
         <HistorialCajaTab
           totalIngresos={totalIngresos}
-          totalGastos={totalGastos}
+          totalGastos={totalGastosPeriodo}
           saldoCaja={saldoCaja}
           filtroCaja={filtroCaja}
           setFiltroCaja={setFiltroCaja}
           tipoCajaFiltro={tipoCajaFiltro}
           setTipoCajaFiltro={setTipoCajaFiltro}
+          periodoCaja={periodoCaja}
+          setPeriodoCaja={setPeriodoCaja}
+          nombrePeriodo={nombrePeriodo}
           recargarBitacora={recargarBitacora}
           loadingBitacora={loadingBitacora}
-          flujoCajaConsolidado={pagos.map(p => ({
+          flujoCajaConsolidado={pagosFiltrados.map(p => ({
             id: p.id,
             fecha: p.fecha,
             usuario: p.sesionCaja?.usuario?.nombre || 'Recepción',
             tipo: 'INGRESO' as 'INGRESO' | 'EGRESO',
             concepto: p.concepto || `Cobro de estancia Hab. ${p.estancia?.habitacion?.numero || 'S/N'} (${p.huesped?.nombre || 'Huésped'})`,
             monto: Number(p.monto)
-          })).concat(gastos.map(g => ({
+          })).concat(gastosFiltrados.map(g => ({
             id: g.id,
             fecha: g.fecha,
             usuario: g.usuario,
@@ -383,8 +444,8 @@ export const HistorialSalidas: React.FC = () => {
           setPaginaCaja={setPaginaCaja}
           limitCaja={limitCaja}
           setModalDetalle={setModalDetalle}
-          pagos={pagos}
-          gastos={gastos}
+          pagos={pagosFiltrados}
+          gastos={gastosFiltrados}
           formatFechas={formatFechas}
           obtenerIniciales={obtenerIniciales}
         />

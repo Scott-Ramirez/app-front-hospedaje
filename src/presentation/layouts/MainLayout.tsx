@@ -15,21 +15,21 @@ import isotipoDark from '../../assets/isotipo-dark.png';
 
 import { 
   LayoutDashboard, 
-  Luggage,
-  CalendarClock, 
-  BedDouble, 
+  KeyRound,
+  CalendarDays, 
+  Bed, 
   Users, 
-  History, 
+  Clock, 
   Settings, 
   Sun, 
   Moon, 
   LogOut,
   ChevronLeft,
   ChevronDown,
-  UserCog,
+  ShieldCheck,
   Wallet,
   Receipt,
-  BarChart3,
+  BarChart2,
   Inbox
 } from 'lucide-react';
 
@@ -67,14 +67,14 @@ export const MainLayout = () => {
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5 flex-shrink-0" /> },
-    { label: 'Estancias Activas', path: '/estancias', icon: <Luggage className="h-5 w-5 flex-shrink-0" /> },
-    { label: 'Reservas', path: '/reservas', icon: <CalendarClock className="h-5 w-5 flex-shrink-0" /> },
-    { label: 'Habitaciones', path: '/habitaciones', icon: <BedDouble className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Estancias Activas', path: '/estancias', icon: <KeyRound className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Reservas', path: '/reservas', icon: <CalendarDays className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Habitaciones', path: '/habitaciones', icon: <Bed className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Huéspedes', path: '/huespedes', icon: <Users className="h-5 w-5 flex-shrink-0" /> },
-    { label: 'Historial', path: '/historial', icon: <History className="h-5 w-5 flex-shrink-0" /> },
+    { label: 'Historial', path: '/historial', icon: <Clock className="h-5 w-5 flex-shrink-0" /> },
     { label: 'Bandeja', path: '/bandeja', icon: <Inbox className="h-5 w-5 flex-shrink-0" /> },
-    ...(usuario?.rol === 'admin' || usuario?.rol === 'supervisor' ? [{ label: 'Reportes', path: '/reportes', icon: <BarChart3 className="h-5 w-5 flex-shrink-0" /> }] : []),
-    ...(usuario?.rol === 'admin' ? [{ label: 'Personal', path: '/usuarios', icon: <UserCog className="h-5 w-5 flex-shrink-0" /> }] : []),
+    ...(usuario?.rol === 'admin' || usuario?.rol === 'supervisor' ? [{ label: 'Reportes', path: '/reportes', icon: <BarChart2 className="h-5 w-5 flex-shrink-0" /> }] : []),
+    ...(usuario?.rol === 'admin' ? [{ label: 'Personal', path: '/usuarios', icon: <ShieldCheck className="h-5 w-5 flex-shrink-0" /> }] : []),
   ];
 
   const handleLogout = () => {
@@ -83,7 +83,7 @@ export const MainLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-on-surface transition-colors duration-200 flex">
+    <div className="min-h-screen bg-background text-on-surface transition-colors duration-200 flex overflow-x-hidden w-full">
       
       {/* 1. SIDEBAR IZQUIERDO */}
       <aside 
@@ -155,7 +155,7 @@ export const MainLayout = () => {
         </nav>        {/* Pie del Sidebar */}
         <div className="mt-auto px-3 pt-3 pb-1 text-center select-none border-t border-outline-variant/40">
           <span className={`inline-block px-2.5 py-0.5 rounded-full bg-surface-container-high border border-outline-variant/60 text-[9px] font-bold tracking-wider text-primary ${isCollapsed ? 'scale-90' : ''}`}>
-            {import.meta.env.VITE_APP_VERSION || 'v1.1.0'}
+            {import.meta.env.VITE_APP_VERSION || 'v1.3.0'}
           </span>
           {!isCollapsed && (
             <p className="text-[10px] text-on-surface-variant/60 font-medium mt-1.5">
@@ -291,11 +291,11 @@ export const MainLayout = () => {
 
       {/* 3. CANVAS CONTENEDOR PRINCIPAL */}
       <main 
-        className={`pt-20 pb-12 p-6 min-h-screen flex-grow bg-background will-change-[margin-left] transition-[margin-left] duration-300 ease-in-out ${
+        className={`pt-24 px-4 sm:px-6 lg:px-8 pb-12 min-h-screen flex-1 min-w-0 max-w-full bg-background will-change-[margin-left] transition-[margin-left] duration-300 ease-in-out ${
           isCollapsed ? 'ml-20' : 'ml-64'
         }`}
       >
-        <div className="mx-auto max-w-[1200px]">
+        <div className="mx-auto max-w-[1360px] w-full min-w-0">
           <Outlet context={{ isCollapsed, setIsCollapsed }} />
         </div>
       </main>

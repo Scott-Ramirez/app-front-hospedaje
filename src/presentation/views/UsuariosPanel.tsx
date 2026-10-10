@@ -4,17 +4,17 @@ import { AlertAdapter } from '../../core/adapters/alert.adapter';
 import type { RolUsuario } from '../../core/entities/usuario.entity';
 import { 
   Users, 
-  UserPlus, 
-  Key, 
+  Plus, 
+  KeyRound, 
   Loader2, 
   RefreshCw, 
   ShieldAlert, 
   Check, 
   X,
-  UserCheck,
-  UserX,
-  UserCog,
-  Clock
+  Pencil,
+  Ban,
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 
 const authRepo = new AuthRepository();
@@ -216,16 +216,17 @@ export const UsuariosPanel: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-[1200px] mx-auto text-on-surface space-y-6">
+    <div className="w-full space-y-5 text-on-surface">
       
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-container-lowest p-4 rounded-xl border border-outline-variant shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-surface-container-lowest p-4 sm:p-5 rounded-2xl border border-outline-variant/60 shadow-xs">
         <div>
-          <h2 className="text-xl font-bold text-primary flex items-center gap-2">
-            <Users className="h-6 w-6" /> Gestión de Usuarios y Personal
+          <h2 className="text-lg font-black text-on-surface flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-primary shrink-0" />
+            <span>Gestión de Personal y Accesos</span>
           </h2>
-          <p className="text-xs text-on-surface-variant mt-1">
-            Registra nuevos recepcionistas y supervisores, asigna turnos y jornadas de trabajo, o gestiona accesos de terminal.
+          <p className="text-xs text-on-surface-variant font-medium mt-0.5">
+            Administra recepcionistas y supervisores, configura turnos y credenciales de acceso.
           </p>
         </div>
         
@@ -233,7 +234,7 @@ export const UsuariosPanel: React.FC = () => {
           <button
             onClick={cargarUsuarios}
             disabled={loading}
-            className="p-2.5 rounded-md border border-outline-variant text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-50"
+            className="p-2 rounded-xl border border-outline-variant/70 text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer disabled:opacity-50"
             title="Refrescar lista"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -241,55 +242,55 @@ export const UsuariosPanel: React.FC = () => {
           
           <button
             onClick={() => setShowRegModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary text-on-primary font-bold px-4 py-2.5 rounded-md text-sm cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-primary text-on-primary font-bold px-4 py-2 rounded-xl text-xs cursor-pointer hover:opacity-90 active:scale-[0.98] transition-all shadow-xs"
           >
-            <UserPlus className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
             <span>Registrar Empleado</span>
           </button>
         </div>
       </div>
 
       {/* Listado de Usuarios */}
-      <div className="bg-surface rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+      <div className="bg-surface rounded-2xl border border-outline-variant/60 shadow-xs overflow-hidden">
         {loading ? (
           <div className="p-12 flex flex-col items-center justify-center gap-3 text-on-surface-variant">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm font-medium">Obteniendo personal del hotel...</p>
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            <p className="text-xs font-semibold">Cargando personal del hospedaje...</p>
           </div>
         ) : usuarios.length === 0 ? (
-          <div className="p-12 text-center text-on-surface-variant max-w-sm mx-auto space-y-3">
-            <div className="h-12 w-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
-              <Users className="h-6 w-6" />
+          <div className="p-12 text-center text-on-surface-variant max-w-sm mx-auto space-y-2">
+            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto">
+              <Users className="h-5 w-5" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-on-surface">No se listan usuarios</h3>
-              <p className="text-xs text-on-surface-variant mt-1">
-                Usa el botón de arriba para registrar nuevos empleados.
+              <p className="text-xs text-on-surface-variant mt-0.5">
+                Utiliza el botón superior para registrar nuevos colaboradores.
               </p>
             </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-surface-container-low text-on-surface-variant font-semibold border-b border-outline-variant">
-                  <th className="px-6 py-3.5 w-16">ID</th>
-                  <th className="px-6 py-3.5">Nombre</th>
-                  <th className="px-6 py-3.5">Usuario (Username)</th>
-                  <th className="px-6 py-3.5">Rol</th>
-                  <th className="px-6 py-3.5">Turno Laboral</th>
-                  <th className="px-6 py-3.5 text-center">Estado</th>
-                  <th className="px-6 py-3.5 text-center w-80">Acciones</th>
+                <tr className="bg-surface-container-low/70 text-on-surface-variant font-bold border-b border-outline-variant/60">
+                  <th className="px-4 py-3 w-14">ID</th>
+                  <th className="px-4 py-3">Nombre</th>
+                  <th className="px-4 py-3">Usuario</th>
+                  <th className="px-4 py-3">Rol</th>
+                  <th className="px-4 py-3">Turno Laboral</th>
+                  <th className="px-4 py-3 text-center w-28">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant">
+              <tbody className="divide-y divide-outline-variant/40 font-medium">
                 {usuarios.map((usr) => (
-                  <tr key={usr.id} className="hover:bg-surface-container-lowest transition-colors group">
-                    <td className="px-6 py-4 font-mono text-xs text-on-surface-variant">#{usr.id}</td>
-                    <td className="px-6 py-4 font-bold text-on-surface">{usr.nombre}</td>
-                    <td className="px-6 py-4 text-on-surface-variant">{usr.username}</td>
-                    <td className="px-6 py-4 capitalize text-xs">
-                      <span className={`px-2 py-0.5 rounded font-bold border ${
+                  <tr key={usr.id} className="hover:bg-surface-container-lowest/50 transition-colors">
+                    <td className="px-4 py-3 font-mono text-[11px] text-on-surface-variant">#{usr.id}</td>
+                    <td className="px-4 py-3 font-bold text-on-surface">{usr.nombre}</td>
+                    <td className="px-4 py-3 text-on-surface-variant font-medium">{usr.username}</td>
+                    <td className="px-4 py-3 capitalize text-[11px]">
+                      <span className={`px-2 py-0.5 rounded-md font-bold border ${
                         usr.rol === 'admin' 
                           ? 'bg-red-500/10 text-red-600 border-red-500/20' 
                           : usr.rol === 'supervisor' 
@@ -299,58 +300,62 @@ export const UsuariosPanel: React.FC = () => {
                         {usr.rol}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-on-surface-variant">
+                    <td className="px-4 py-3 text-[11px] font-semibold text-on-surface-variant">
                       {usr.horaInicioTurno && usr.horaFinTurno ? (
-                        <span className="flex items-center gap-1.5 text-primary">
-                          <Clock className="h-3.5 w-3.5 shrink-0" />
-                          {usr.horaInicioTurno} hrs - {usr.horaFinTurno} hrs
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          {usr.horaInicioTurno} - {usr.horaFinTurno}
                         </span>
                       ) : (
-                        <span className="text-on-surface-variant/60 font-medium">Libre / Sin restricción</span>
+                        <span className="text-on-surface-variant/60 font-medium">Libre / Sin límite</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className={`inline-flex items-center gap-1 text-xs font-bold ${usr.activo !== false ? 'text-green-600' : 'text-red-500'}`}>
-                        {usr.activo !== false ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                        usr.activo !== false 
+                          ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' 
+                          : 'bg-red-500/10 text-red-500 border border-red-500/20'
+                      }`}>
+                        {usr.activo !== false ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
                         {usr.activo !== false ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => openEditModal(usr)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-outline-variant hover:bg-surface-container-high text-xs font-bold transition-all cursor-pointer shadow-sm text-on-surface-variant"
-                          title="Editar datos de usuario"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-outline-variant/70 hover:bg-surface-container-high text-[11px] font-bold transition-all cursor-pointer shadow-2xs text-on-surface-variant"
+                          title="Editar usuario"
                         >
-                          <UserCog className="h-3.5 w-3.5 text-primary" />
+                          <Pencil className="h-3 w-3 text-primary" />
                           <span>Editar</span>
                         </button>
                         
                         <button
                           onClick={() => openResetModal(usr.id, usr.username)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-outline-variant hover:bg-surface-container-high text-xs font-bold transition-all cursor-pointer shadow-sm text-on-surface-variant"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-outline-variant/70 hover:bg-surface-container-high text-[11px] font-bold transition-all cursor-pointer shadow-2xs text-on-surface-variant"
                           title="Restablecer contraseña"
                         >
-                          <Key className="h-3.5 w-3.5 text-amber-500" />
+                          <KeyRound className="h-3 w-3 text-amber-500" />
                           <span>Clave</span>
                         </button>
                         
                         {usr.activo !== false ? (
                           <button
                             onClick={() => handleToggleEstado(usr.id, usr.username, false)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-red-500/20 hover:bg-red-500/5 text-red-500 hover:text-red-600 text-xs font-bold transition-all cursor-pointer shadow-sm"
-                            title="Dar de baja a este usuario"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-500/25 hover:bg-red-500/10 text-red-600 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
+                            title="Desactivar usuario"
                           >
-                            <UserX className="h-3.5 w-3.5" />
+                            <Ban className="h-3 w-3" />
                             <span>Baja</span>
                           </button>
                         ) : (
                           <button
                             onClick={() => handleToggleEstado(usr.id, usr.username, true)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded border border-green-500/20 hover:bg-green-500/5 text-green-600 hover:text-green-700 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-emerald-500/25 hover:bg-emerald-500/10 text-emerald-600 text-[11px] font-bold transition-all cursor-pointer shadow-2xs"
                             title="Reactivar usuario"
                           >
-                            <UserCheck className="h-3.5 w-3.5" />
+                            <Check className="h-3 w-3" />
                             <span>Activar</span>
                           </button>
                         )}

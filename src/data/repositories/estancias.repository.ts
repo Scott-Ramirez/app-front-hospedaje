@@ -11,6 +11,7 @@ export interface RegistroInicialDto {
   fecha_salida_programada: string; // ISO String
   pago_inicial?: number;
   metodo_pago?: string;
+  precio_noche?: number;
 }
 
 export interface EstanciaResponse {
@@ -21,6 +22,8 @@ export interface EstanciaResponse {
   fecha_salida_programada: string;
   fecha_salida_real: string | null;
   total_pagar: number;
+  precio_noche?: number | null;
+  precioPorNoche?: number;
   estado: 'pendiente' | 'pagado' | 'finalizado';
   createdAt: string;
   updatedAt: string;
@@ -107,8 +110,16 @@ export const estanciasRepository = {
   /**
    * Amplía la estadía hasta una nueva fecha de salida y registra el cobro de días adelantados.
    */
-  async extenderEstadia(id: string, datos: { nuevaFechaSalida: string; diasAdicionales?: number; monto?: number; metodoPago?: string; concepto?: string }): Promise<any> {
+  async extenderEstadia(id: string, datos: { nuevaFechaSalida: string; diasAdicionales?: number; monto?: number; metodoPago?: string; concepto?: string; nuevoPrecioNoche?: number }): Promise<any> {
     const response = await api.post(`/estancias/${id}/extender`, datos);
+    return response.data;
+  },
+
+  /**
+   * Modifica la tarifa pactada por noche para una estancia activa (descuentos por estadías largas/meses).
+   */
+  async cambiarTarifa(id: string, datos: { nuevoPrecioNoche: number; motivo?: string }): Promise<any> {
+    const response = await api.patch(`/estancias/${id}/tarifa`, datos);
     return response.data;
   }
 };

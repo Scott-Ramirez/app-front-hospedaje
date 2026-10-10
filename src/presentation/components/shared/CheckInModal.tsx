@@ -221,6 +221,8 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
         fechaSalida.setDate(fechaSalida.getDate() + totalNoches);
         fechaSalida.setHours(13, 0, 0, 0);
 
+        const precioNocheCalculado = totalNoches > 0 ? Number((totalPagarNum / totalNoches).toFixed(2)) : totalPagarNum;
+
         const payload: RegistroInicialDto = {
             nombre: formData.nombre.trim(),
             dni: dniLimpio,
@@ -230,6 +232,7 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
             fecha_salida_programada: fechaSalida.toISOString(),
             pago_inicial: pagoInicialNum > 0 ? pagoInicialNum : undefined,
             metodo_pago: pagoInicialNum > 0 ? formData.metodo_pago : undefined,
+            precio_noche: precioNocheCalculado,
         };
 
         const exito = await onConfirm(payload);
@@ -444,6 +447,11 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                                     value={formData.total_pagar}
                                     onChange={(e) => setFormData({ ...formData, total_pagar: e.target.value })}
                                 />
+                                {formData.total_pagar && Number(formData.total_pagar) > 0 && (
+                                    <span className="text-[10px] text-primary font-semibold">
+                                        Tarifa pactada: S/. {(Number(formData.total_pagar) / (Number(noches) || 1)).toFixed(2)} / noche
+                                    </span>
+                                )}
                             </div>
                         </div>
 
