@@ -153,7 +153,7 @@ export const Splash = ({ onFinished }: SplashProps) => {
         {/* ─── PIE DE TARJETA CON VERSIÓN CENTRADA ─────────────────────────── */}
         <div className="mt-6 pt-4 border-t border-outline-variant/40 w-full flex items-center justify-center text-[10px] font-semibold text-on-surface-variant">
           <span className="px-2.5 py-0.5 rounded-full bg-surface-container-high font-mono font-bold text-primary border border-outline-variant/60 shadow-2xs">
-            {import.meta.env.VITE_APP_VERSION || 'v1.3.0'}
+            {import.meta.env.VITE_APP_VERSION || 'v1.4.0'}
           </span>
         </div>
 

@@ -3,7 +3,7 @@ import {
   X, BedDouble, CreditCard, 
   Lock, Unlock, Loader2, CheckCircle2, AlertCircle,
   Clock, Hash, LogOut, Bell, CalendarPlus, Calendar, ArrowRight,
-  Sparkles
+  Sparkles, Repeat, ArrowRightLeft, Info
 } from 'lucide-react';
 import { SolesIcon } from './SolesIcon';
 import { estanciasRepository } from '../../../data/repositories/estancias.repository';
@@ -11,6 +11,7 @@ import { pagoRepository } from '../../../data/repositories/pago.repository';
 import { AlertAdapter } from '../../../core/adapters/alert.adapter';
 import { useCajaSesion } from '../../context/CajaSesionContext';
 import { useAuth } from '../../context/AuthContext';
+import { useHabitaciones } from '../../hooks/useHabitaciones';
 import { EnviarNotificacionModal } from './EnviarNotificacionModal';
 
 interface DetalleEstanciaModalProps {
@@ -30,8 +31,8 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   const [metodoPago, setMetodoPago] = useState('');
   const [submittingPago, setSubmittingPago] = useState(false);
 
-  // Modo de acción: 'deuda' (pagar saldo pendiente) | 'ampliar' (extender estadía y pagar días adelantados)
-  const [tabAccion, setTabAccion] = useState<'deuda' | 'ampliar'>('deuda');
+  // Modo de acción: 'deuda' (pagar saldo pendiente) | 'ampliar' (extender estadía y pagar días adelantados) | 'cambiar' (cambio de habitación)
+  const [tabAccion, setTabAccion] = useState<'deuda' | 'ampliar' | 'cambiar'>('deuda');
 
   // Estados para ampliación de estadía
   const [diasAdicionales, setDiasAdicionales] = useState<number>(1);
@@ -39,7 +40,18 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   const [tarifaNocheAmpliacion, setTarifaNocheAmpliacion] = useState<string>('');
   const [metodoPagoAmpliacion, setMetodoPagoAmpliacion] = useState<string>('efectivo');
   const [archivoEvidenciaAmpliacion, setArchivoEvidenciaAmpliacion] = useState<File | null>(null);
+  const [esRetroactivo, setEsRetroactivo] = useState<boolean>(false);
+  const [motivoAmpliacion, setMotivoAmpliacion] = useState<string>('');
   const [submittingAmpliacion, setSubmittingAmpliacion] = useState(false);
+
+  // Estados para cambio de habitación
+  const { habitaciones } = useHabitaciones() as any;
+  const [nuevaHabId, setNuevaHabId] = useState<string>('');
+  const [tarifaNocheNuevaHab, setTarifaNocheNuevaHab] = useState<string>('');
+  const [montoDiferenciaCambio, setMontoDiferenciaCambio] = useState<string>('0');
+  const [metodoPagoCambio, setMetodoPagoCambio] = useState<string>('efectivo');
+  const [motivoCambioHab, setMotivoCambioHab] = useState<string>('');
+  const [submittingCambio, setSubmittingCambio] = useState(false);
 
   const [listaPagos, setListaPagos] = useState<any[]>([]);
   const [uploadingPagoId, setUploadingPagoId] = useState<string | null>(null);
@@ -113,6 +125,12 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       setDiasAdicionales(1);
       setArchivoEvidenciaAmpliacion(null);
       setMetodoPagoAmpliacion('efectivo');
+      setEsRetroactivo(false);
+      setMotivoAmpliacion('');
+      setNuevaHabId('');
+      setMotivoCambioHab('');
+      setMontoDiferenciaCambio('0');
+      setTarifaNocheNuevaHab('');
 
       const base = getFechaSalidaBase();
       const nueva = new Date(base);
@@ -121,9 +139,9 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       setFechaSalidaInput(nueva.toISOString().split('T')[0]);
       setTarifaNocheAmpliacion(String(estancia.precio_noche ?? estancia.habitacion?.precio ?? ''));
 
-      // Si la deuda es 0, activar directamente la pestaña de ampliar estadía
+      // Si la deuda es 0 o es cortesía, activar directamente la pestaña de ampliar estadía
       const totalProg = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
-      if (totalProg <= Number(estancia.total_pagar || 0)) {
+      if (estancia.tipo_estancia === 'cortesia' || totalProg <= Number(estancia.total_pagar || 0)) {
         setTabAccion('ampliar');
       } else {
         setTabAccion('deuda');
@@ -133,12 +151,13 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
   if (!isOpen || !estancia) return null;
 
-  const precioHabitacion = Number(estancia.precio_noche ?? estancia.habitacion?.precio ?? 0);
+  const esCortesia = estancia.tipo_estancia === 'cortesia';
+  const precioHabitacion = esCortesia ? 0 : Number(estancia.precio_noche ?? estancia.habitacion?.precio ?? 0);
   const precioOriginalCatalogo = Number(estancia.habitacion?.precio ?? 0);
-  const tieneTarifaPactada = Boolean(estancia.precio_noche && Number(estancia.precio_noche) !== precioOriginalCatalogo);
-  const totalProgramado = Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0;
-  const deudaProgramada = Number(Math.max(0, totalProgramado - totalPagos).toFixed(2));
-  const porcentajePagado = totalProgramado > 0 ? Math.min(100, (totalPagos / totalProgramado) * 100) : 100;
+  const tieneTarifaPactada = !esCortesia && Boolean(estancia.precio_noche && Number(estancia.precio_noche) !== precioOriginalCatalogo);
+  const totalProgramado = esCortesia ? 0 : (Number(estancia.montoAcumulado ?? estancia.total_pagar) || 0);
+  const deudaProgramada = esCortesia ? 0 : Number(Math.max(0, totalProgramado - totalPagos).toFixed(2));
+  const porcentajePagado = esCortesia ? 100 : (totalProgramado > 0 ? Math.min(100, (totalPagos / totalProgramado) * 100) : 100);
 
   // Simular check-out para el día de hoy
   const getDiasSiCheckOutHoy = () => {
@@ -153,9 +172,9 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
   const esFinalizado = estancia.estado === 'finalizado';
   const diasRealesHoy = esFinalizado ? (estancia.noches || 1) : getDiasSiCheckOutHoy();
-  const totalRealesHoy = esFinalizado ? totalProgramado : (diasRealesHoy * precioHabitacion);
-  const deudaRealHoy = esFinalizado ? 0 : Number(Math.max(0, totalRealesHoy - totalPagos).toFixed(2));
-  const alDiaParaCheckOut = esFinalizado || deudaRealHoy === 0;
+  const totalRealesHoy = esFinalizado ? totalProgramado : (esCortesia ? 0 : (diasRealesHoy * precioHabitacion));
+  const deudaRealHoy = (esFinalizado || esCortesia) ? 0 : Number(Math.max(0, totalRealesHoy - totalPagos).toFixed(2));
+  const alDiaParaCheckOut = esFinalizado || esCortesia || deudaRealHoy === 0;
 
   // Cálculo de nueva fecha y costo de ampliación
   const fechaBaseActual = getFechaSalidaBase();
@@ -163,8 +182,56 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
   nuevaFechaCalculada.setDate(nuevaFechaCalculada.getDate() + diasAdicionales);
   nuevaFechaCalculada.setHours(13, 0, 0, 0);
 
+  // Días previos programados en la estancia
+  const getDiasPreviosProgramados = () => {
+    if (!estancia?.fecha_entrada) return 1;
+    const d1 = new Date(estancia.fecha_entrada);
+    const d2 = new Date(fechaBaseActual);
+    d1.setHours(0, 0, 0, 0);
+    d2.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.max(1, diffDays);
+  };
+  const diasPrevios = getDiasPreviosProgramados();
+  const totalDiasEstanciaGlobal = diasPrevios + diasAdicionales;
+
   const precioEfectivoAmpliacion = Number(tarifaNocheAmpliacion) > 0 ? Number(tarifaNocheAmpliacion) : precioHabitacion;
-  const costoAmpliacion = Number((diasAdicionales * precioEfectivoAmpliacion).toFixed(2));
+  const costoTotalEstanciaGlobal = Number((totalDiasEstanciaGlobal * precioEfectivoAmpliacion).toFixed(2));
+  
+  // Si es retroactivo: (total noches globales × nueva tarifa) - total ya pagado históricamente
+  const costoAmpliacion = esRetroactivo
+    ? Math.max(0, Number((costoTotalEstanciaGlobal - totalPagos).toFixed(2)))
+    : Number((diasAdicionales * precioEfectivoAmpliacion).toFixed(2));
+
+  // Habitaciones disponibles para cambio (excluye la habitación actual)
+  const idHabitacionActual = estancia.habitacion_id || estancia.habitacion?.id || (estancia as any).habitacionId;
+  const habitacionesParaCambio = Array.isArray(habitaciones)
+    ? habitaciones.filter((h: any) => h.id !== idHabitacionActual && h.estado === 'disponible')
+    : [];
+
+  const handleSelectNuevaHab = (id: string) => {
+    setNuevaHabId(id);
+    if (!id) {
+      setMontoDiferenciaCambio('0');
+      setTarifaNocheNuevaHab('');
+      return;
+    }
+    const habElegida = habitacionesParaCambio.find((h: any) => h.id === id);
+    if (habElegida) {
+      const precioNueva = Number(habElegida.precio) || 0;
+      setTarifaNocheNuevaHab(String(precioNueva));
+
+      // Días restantes programados hasta el check-out
+      const diffMs = new Date(fechaBaseActual).getTime() - new Date().getTime();
+      const diasRestantes = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+      if (precioNueva > precioHabitacion) {
+        const diffTotal = (precioNueva - precioHabitacion) * diasRestantes;
+        setMontoDiferenciaCambio(diffTotal.toFixed(2));
+      } else {
+        setMontoDiferenciaCambio('0');
+      }
+    }
+  };
 
   // Manejador de botones rápidos de días
   const handleSeleccionarDiasRapidos = (dias: number) => {
@@ -213,24 +280,33 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
 
   const handleConfirmarAmpliacion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (diasAdicionales <= 0 || costoAmpliacion <= 0) {
+    if (diasAdicionales <= 0) {
       AlertAdapter.error('Datos Inválidos', 'Debe seleccionar al menos 1 noche adicional.');
       return;
     }
-    if (!metodoPagoAmpliacion) {
+    if (costoAmpliacion > 0 && !metodoPagoAmpliacion) {
       AlertAdapter.error('Falta Método de Pago', 'Seleccione el método de pago para la ampliación.');
+      return;
+    }
+    if (esRetroactivo && !motivoAmpliacion.trim()) {
+      AlertAdapter.error('Falta Motivo', 'Debe indicar el motivo o quién autorizó la tarifa retroactiva.');
       return;
     }
 
     try {
       setSubmittingAmpliacion(true);
+      const conceptoFinal = esRetroactivo
+        ? `Ampliación +${diasAdicionales} noche(s) con tarifa pactada S/. ${precioEfectivoAmpliacion.toFixed(2)}/noche global. (Total ${totalDiasEstanciaGlobal}d S/. ${costoTotalEstanciaGlobal.toFixed(2)} - Pagado previo S/. ${totalPagos.toFixed(2)} = S/. ${costoAmpliacion.toFixed(2)}).${motivoAmpliacion.trim() ? ` Obs: ${motivoAmpliacion.trim()}` : ''}`
+        : `Ampliación de estadía (+${diasAdicionales} noche(s) hasta ${formatFechaCorta(nuevaFechaCalculada)}).${motivoAmpliacion.trim() ? ` Obs: ${motivoAmpliacion.trim()}` : ''}`;
+
       const res = await estanciasRepository.extenderEstadia(estancia.id, {
         nuevaFechaSalida: nuevaFechaCalculada.toISOString(),
         diasAdicionales,
         monto: costoAmpliacion,
-        metodoPago: metodoPagoAmpliacion,
+        metodoPago: costoAmpliacion > 0 ? metodoPagoAmpliacion : undefined,
         nuevoPrecioNoche: precioEfectivoAmpliacion,
-        concepto: `Ampliación de estadía (+${diasAdicionales} noche(s) hasta ${formatFechaCorta(nuevaFechaCalculada)})`
+        concepto: conceptoFinal,
+        observaciones: motivoAmpliacion.trim() || undefined,
       });
 
       // Si adjuntó comprobante digital y se generó pago, subirlo
@@ -250,6 +326,8 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       );
 
       setArchivoEvidenciaAmpliacion(null);
+      setMotivoAmpliacion('');
+      setEsRetroactivo(false);
       await cargarDeudaRealTime();
       await verificarCaja(true);
       onRefreshList();
@@ -257,6 +335,52 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
       AlertAdapter.error('Error al ampliar estadía', err.response?.data?.message || 'No se pudo procesar la ampliación.');
     } finally {
       setSubmittingAmpliacion(false);
+    }
+  };
+
+  const handleConfirmarCambioHabitacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevaHabId) {
+      AlertAdapter.error('Falta Habitación', 'Seleccione la nueva habitación de destino.');
+      return;
+    }
+    if (!motivoCambioHab.trim()) {
+      AlertAdapter.error('Falta Motivo', 'Debe indicar el motivo del cambio de habitación.');
+      return;
+    }
+    const montoDiff = Number(montoDiferenciaCambio) || 0;
+    if (montoDiff > 0 && !metodoPagoCambio) {
+      AlertAdapter.error('Falta Método de Pago', 'Seleccione el método de pago para cobrar la diferencia.');
+      return;
+    }
+
+    try {
+      setSubmittingCambio(true);
+      const res = await estanciasRepository.cambiarHabitacion(estancia.id, {
+        nuevaHabitacionId: nuevaHabId,
+        montoDiferencia: montoDiff,
+        metodoPago: montoDiff > 0 ? metodoPagoCambio : undefined,
+        nuevoPrecioNoche: Number(tarifaNocheNuevaHab) > 0 ? Number(tarifaNocheNuevaHab) : undefined,
+        motivo: motivoCambioHab.trim(),
+      });
+
+      AlertAdapter.success(
+        '¡Habitación Cambiada!',
+        `Se trasladó al huésped a la Habitación ${res.estancia?.habitacion?.numero || 'nueva'} con éxito. La habitación anterior pasó a Limpieza.`
+      );
+
+      setNuevaHabId('');
+      setMotivoCambioHab('');
+      setMontoDiferenciaCambio('0');
+      setTarifaNocheNuevaHab('');
+      await cargarDeudaRealTime();
+      await verificarCaja(true);
+      onRefreshList();
+      onClose();
+    } catch (err: any) {
+      AlertAdapter.error('Error al cambiar habitación', err.response?.data?.message || 'No se pudo procesar el cambio de habitación.');
+    } finally {
+      setSubmittingCambio(false);
     }
   };
 
@@ -292,6 +416,10 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
             {esFinalizado ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
                 <CheckCircle2 className="h-3 w-3" /> Estancia Finalizada
+              </span>
+            ) : esCortesia ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full">
+                ✨ Cortesía / Familiar
               </span>
             ) : alDiaParaCheckOut ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
@@ -334,14 +462,22 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
-                {tieneTarifaPactada && (
-                  <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
-                    Tarifa Pactada
+                {esCortesia ? (
+                  <span className="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-500/15 border border-purple-500/25 px-2.5 py-1 rounded-lg">
+                    ✨ Cortesía (S/. 0.00)
                   </span>
+                ) : (
+                  <>
+                    {tieneTarifaPactada && (
+                      <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md">
+                        Tarifa Pactada
+                      </span>
+                    )}
+                    <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
+                      S/. {precioHabitacion.toFixed(2)}<span className="font-normal text-on-surface-variant">/noche</span>
+                    </span>
+                  </>
                 )}
-                <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg">
-                  S/. {precioHabitacion.toFixed(2)}<span className="font-normal text-on-surface-variant">/noche</span>
-                </span>
               </div>
             </div>
 
@@ -479,34 +615,49 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
             )}
           </div>
 
-          {/* ── BOTONES DE ACCIÓN: TABS INTERACTIVOS (ABONAR O AMPLIAR) ── */}
+          {/* ── BOTONES DE ACCIÓN: TABS INTERACTIVOS (AMPLIAR, CAMBIAR O ABONAR) ── */}
           {!esFinalizado && (
-            <div className="flex items-center gap-2 p-1 bg-surface-container rounded-xl border border-outline-variant/60">
+            <div className="flex items-center gap-1.5 p-1 bg-surface-container rounded-xl border border-outline-variant/60">
               <button
                 type="button"
                 onClick={() => setTabAccion('ampliar')}
-                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   tabAccion === 'ampliar'
                     ? 'bg-primary text-on-primary shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface hover:bg-surface'
                 }`}
               >
                 <CalendarPlus className="h-4 w-4" />
-                <span>Ampliar Estadía / Días</span>
+                <span>Ampliar Días</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setTabAccion('deuda')}
-                className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                  tabAccion === 'deuda'
+                onClick={() => setTabAccion('cambiar')}
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  tabAccion === 'cambiar'
                     ? 'bg-primary text-on-primary shadow-sm'
                     : 'text-on-surface-variant hover:text-on-surface hover:bg-surface'
                 }`}
               >
-                <CreditCard className="h-4 w-4" />
-                <span>Pagar Saldo ({deudaProgramada > 0 ? `S/. ${deudaProgramada.toFixed(2)}` : 'S/. 0.00'})</span>
+                <ArrowRightLeft className="h-4 w-4" />
+                <span>Cambiar Cuarto</span>
               </button>
+
+              {!esCortesia && (
+                <button
+                  type="button"
+                  onClick={() => setTabAccion('deuda')}
+                  className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    tabAccion === 'deuda'
+                      ? 'bg-primary text-on-primary shadow-sm'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface'
+                  }`}
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span>Pagar Saldo {deudaProgramada > 0 ? `(S/ ${deudaProgramada.toFixed(0)})` : ''}</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -645,6 +796,58 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                   </div>
                 </div>
 
+                {/* OPCIÓN: TARIFA NEGOCIADA RETROACTIVA A TODA LA ESTADÍA */}
+                <div className="p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl space-y-2 text-left">
+                  <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={esRetroactivo}
+                      onChange={(e) => setEsRetroactivo(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-amber-800 dark:text-amber-300">
+                        Aplicar tarifa negociada retroactiva a toda la estancia
+                      </span>
+                      <span className="text-[11px] text-on-surface-variant leading-tight">
+                        Recalcula todas las noches ({diasPrevios} previas + {diasAdicionales} nuevas) con la nueva tarifa y descuenta lo ya pagado.
+                      </span>
+                    </div>
+                  </label>
+
+                  {esRetroactivo && (
+                    <div className="p-2.5 bg-surface rounded-lg border border-amber-500/20 text-xs space-y-1 animate-fade-in font-mono">
+                      <div className="flex justify-between text-on-surface-variant">
+                        <span>Estancia total ({totalDiasEstanciaGlobal} noches × S/. {precioEfectivoAmpliacion.toFixed(2)}):</span>
+                        <span className="font-bold text-on-surface">S/. {costoTotalEstanciaGlobal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-on-surface-variant">
+                        <span>Total ya abonado anteriormente:</span>
+                        <span className="font-bold text-emerald-600">- S/. {totalPagos.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-on-surface font-bold border-t border-outline-variant/40 pt-1">
+                        <span className="text-amber-700 dark:text-amber-300">Neto a cobrar hoy en caja:</span>
+                        <span className="text-amber-700 dark:text-amber-300 text-sm">S/. {costoAmpliacion.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Campo de Motivo u Observación */}
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">
+                    Motivo / Autorización de la ampliación {esRetroactivo && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={esRetroactivo}
+                    placeholder={esRetroactivo ? "Ej. Autorizado por el dueño: tarifa S/ 30 por 6 noches" : "Opcional. Ej. Solicitud de huésped"}
+                    value={motivoAmpliacion}
+                    onChange={(e) => setMotivoAmpliacion(e.target.value)}
+                    className="w-full bg-surface border border-outline-variant rounded-lg px-2.5 py-2 text-xs text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                </div>
+
                 {/* Botón de Confirmación */}
                 <button
                   type="submit"
@@ -663,6 +866,137 @@ export const DetalleEstanciaModal = ({ isOpen, onClose, estancia, onCheckOut, on
                     </>
                   )}
                 </button>
+              </div>
+            </form>
+          )}
+
+          {/* ── FORMULARIO: CAMBIAR DE HABITACIÓN (ROOM TRANSFER) ────────────── */}
+          {!esFinalizado && tabAccion === 'cambiar' && (
+            <form onSubmit={handleConfirmarCambioHabitacion} className="bg-surface-container rounded-xl border border-primary/30 shadow-xs overflow-hidden">
+              <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                  <Repeat className="h-4 w-4" />
+                  <span>Traslado / Cambio de Habitación</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-surface text-on-surface-variant border border-outline-variant">
+                  Actual: Hab. {estancia.habitacion?.numero}
+                </span>
+              </div>
+
+              <div className="p-4 space-y-3.5 text-left">
+                {/* Selector de Nueva Habitación */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide flex items-center gap-1">
+                    <BedDouble className="h-3.5 w-3.5 text-primary" /> Seleccionar Nueva Habitación (Disponible) <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={nuevaHabId}
+                    onChange={(e) => handleSelectNuevaHab(e.target.value)}
+                    className="w-full bg-surface border border-outline-variant rounded-lg px-2.5 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface cursor-pointer"
+                  >
+                    <option value="">Seleccione una habitación disponible...</option>
+                    {habitacionesParaCambio.map((hab: any) => (
+                      <option key={hab.id} value={hab.id}>
+                        Habitación {hab.numero} — {hab.tipo?.toUpperCase()} (S/. {Number(hab.precio).toFixed(2)}/noche)
+                      </option>
+                    ))}
+                  </select>
+                  {habitacionesParaCambio.length === 0 && (
+                    <p className="text-[11px] text-amber-600 font-medium pt-1">
+                      ⚠️ No hay otras habitaciones disponibles en este momento para realizar un traslado.
+                    </p>
+                  )}
+                </div>
+
+                {nuevaHabId && (
+                  <div className="space-y-3 animate-fade-in">
+                    {/* Alerta operativa */}
+                    <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[11px] text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                      <Info className="h-4 w-4 shrink-0 text-blue-500" />
+                      <span>
+                        La Habitación <strong>{estancia.habitacion?.numero}</strong> pasará automáticamente a estado <strong>Limpieza</strong>.
+                      </span>
+                    </div>
+
+                    {/* Diferencia de precio y Cobro */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">
+                          Monto a cobrar hoy por diferencia (S/.)
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={montoDiferenciaCambio}
+                          onChange={(e) => setMontoDiferenciaCambio(e.target.value)}
+                          className="w-full bg-surface border border-outline-variant rounded-lg px-2.5 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-mono"
+                          placeholder="0.00"
+                        />
+                        <span className="text-[10px] text-on-surface-variant">
+                          {Number(montoDiferenciaCambio) > 0 ? '✨ Cobro que ingresará a la caja del día' : 'Sin costo adicional (S/. 0.00)'}
+                        </span>
+                      </div>
+
+                      {Number(montoDiferenciaCambio) > 0 && (
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">
+                            Método de Pago <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            required
+                            value={metodoPagoCambio}
+                            onChange={(e) => setMetodoPagoCambio(e.target.value)}
+                            className="w-full bg-surface border border-outline-variant rounded-lg px-2 py-2 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/30 text-on-surface cursor-pointer capitalize"
+                          >
+                            <option value="efectivo">Efectivo</option>
+                            <option value="yape">Yape</option>
+                            <option value="plin">Plin</option>
+                            <option value="tarjeta">Tarjeta</option>
+                            <option value="transferencia">Transferencia</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Motivo del cambio */}
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wide">
+                        Motivo del Cambio de Habitación <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. Problema con la ducha / Solicitó cama matrimonial / Ruido de calle"
+                        value={motivoCambioHab}
+                        onChange={(e) => setMotivoCambioHab(e.target.value)}
+                        className="w-full bg-surface border border-outline-variant rounded-lg px-2.5 py-2 text-xs text-on-surface outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+
+                    {/* Botón de Confirmación del cambio */}
+                    <button
+                      type="submit"
+                      disabled={submittingCambio || !nuevaHabId}
+                      className="w-full bg-primary text-on-primary font-bold text-sm py-3 rounded-xl hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {submittingCambio ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Procesando Traslado...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Repeat className="h-4 w-4" />
+                          <span>
+                            Confirmar Traslado {Number(montoDiferenciaCambio) > 0 ? `(Cobrar S/. ${Number(montoDiferenciaCambio).toFixed(2)})` : '(S/. 0.00)'}
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             </form>
           )}

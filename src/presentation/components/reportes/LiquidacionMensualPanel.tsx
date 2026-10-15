@@ -38,6 +38,8 @@ interface HistorialRegistro {
   fechaEntrada: string;
   fechaSalida: string;
   montoTotalPagado: number;
+  tipoEstancia?: 'normal' | 'cortesia';
+  observaciones?: string;
 }
 
 interface PagoRegistro {
@@ -476,14 +478,16 @@ export const LiquidacionMensualPanel: React.FC = () => {
       html += `<tr><td colspan="7" class="center" style="color:#94a3b8;">No hay check-outs registrados en este período</td></tr>`;
     } else {
       checkOutsMes.forEach((s) => {
+        const esCort = s.tipoEstancia === 'cortesia';
+        const obsText = s.observaciones ? ` (${s.observaciones})` : '';
         html += `
           <tr>
             <td class="center">${new Date(s.fechaEntrada).toLocaleDateString()}</td>
             <td class="center">${new Date(s.fechaSalida).toLocaleDateString()}</td>
-            <td colspan="2" style="text-transform: capitalize;">${s.huespedNombre}</td>
+            <td colspan="2" style="text-transform: capitalize;">${s.huespedNombre}${esCort ? ' [CORTESÍA]' : ''}${obsText}</td>
             <td class="center font-mono">${s.huespedDni}</td>
             <td class="center">Hab. ${s.habitacionNumero}</td>
-            <td class="num font-bold">S/. ${Number(s.montoTotalPagado).toFixed(2)}</td>
+            <td class="num font-bold">${esCort ? 'S/. 0.00' : `S/. ${Number(s.montoTotalPagado).toFixed(2)}`}</td>
           </tr>
         `;
       });
@@ -655,16 +659,23 @@ export const LiquidacionMensualPanel: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            ${checkOutsMes.length === 0 ? '<tr><td colspan="6" class="text-center" style="color:#94a3b8;">Sin check-outs registrados en el período</td></tr>' : checkOutsMes.map(s => `
+            ${checkOutsMes.length === 0 ? '<tr><td colspan="6" class="text-center" style="color:#94a3b8;">Sin check-outs registrados en el período</td></tr>' : checkOutsMes.map(s => {
+              const esCort = s.tipoEstancia === 'cortesia';
+              return `
               <tr>
                 <td class="text-center">${new Date(s.fechaEntrada).toLocaleDateString()}</td>
                 <td class="text-center">${new Date(s.fechaSalida).toLocaleDateString()}</td>
-                <td style="text-transform: capitalize;">${s.huespedNombre}</td>
+                <td style="text-transform: capitalize;">
+                  ${s.huespedNombre}
+                  ${esCort ? ' <span style="background:#e9d5ff;color:#7e22ce;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:bold;">CORTESÍA</span>' : ''}
+                  ${s.observaciones ? `<div style="font-size:8px;color:#64748b;font-style:italic;">📝 ${s.observaciones}</div>` : ''}
+                </td>
                 <td class="text-center font-mono">${s.huespedDni}</td>
                 <td class="text-center font-bold">Hab. ${s.habitacionNumero}</td>
-                <td class="text-right font-bold">S/. ${Number(s.montoTotalPagado).toFixed(2)}</td>
+                <td class="text-right font-bold">${esCort ? '<span style="color:#7e22ce;">S/. 0.00</span>' : `S/. ${Number(s.montoTotalPagado).toFixed(2)}`}</td>
               </tr>
-            `).join('')}
+            `;
+            }).join('')}
             <tr style="background: #f1f5f9;">
               <td colspan="5" class="text-right font-bold">Subtotal por Check-Outs Concluidos:</td>
               <td class="text-right font-bold" style="color:#006b4d;">S/. ${totalCobradoCheckouts.toFixed(2)}</td>
@@ -1276,7 +1287,19 @@ export const LiquidacionMensualPanel: React.FC = () => {
                           {new Date(s.fechaSalida).toLocaleDateString()}
                         </td>
                         <td className="p-3 font-semibold text-on-surface capitalize">
-                          {s.huespedNombre}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span>{s.huespedNombre}</span>
+                            {s.tipoEstancia === 'cortesia' && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                                Cortesía
+                              </span>
+                            )}
+                          </div>
+                          {s.observaciones && (
+                            <p className="text-[10px] text-on-surface-variant/70 italic font-normal line-clamp-1 mt-0.5">
+                              📝 {s.observaciones}
+                            </p>
+                          )}
                         </td>
                         <td className="p-3 text-center font-mono text-on-surface-variant">
                           {s.huespedDni}
@@ -1287,7 +1310,11 @@ export const LiquidacionMensualPanel: React.FC = () => {
                           </span>
                         </td>
                         <td className="p-3 text-right font-black text-primary text-sm">
-                          S/. {Number(s.montoTotalPagado).toFixed(2)}
+                          {s.tipoEstancia === 'cortesia' ? (
+                            <span className="text-purple-600 dark:text-purple-400 font-bold text-xs bg-purple-500/10 px-2 py-0.5 rounded">S/. 0.00</span>
+                          ) : (
+                            `S/. ${Number(s.montoTotalPagado).toFixed(2)}`
+                          )}
                         </td>
                       </tr>
                     ))}

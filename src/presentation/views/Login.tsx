@@ -213,7 +213,7 @@ export const Login = () => {
           </div>
 
           <span className="px-2 py-0.5 rounded-full bg-surface-container-high font-mono font-bold text-primary border border-outline-variant/60">
-            {import.meta.env.VITE_APP_VERSION || 'v1.3.0'}
+            {import.meta.env.VITE_APP_VERSION || 'v1.4.0'}
           </span>
         </div>
 

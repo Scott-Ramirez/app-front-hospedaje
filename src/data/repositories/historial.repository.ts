@@ -10,6 +10,8 @@ export interface HistorialRegistroDTO {
   fechaEntrada: string; // ISO string de la base de datos
   fechaSalida: string;  // ISO string de la base de datos
   montoTotalPagado: number;
+  tipoEstancia?: 'normal' | 'cortesia';
+  observaciones?: string | null;
 }
 
 export interface HistorialMetaDTO {

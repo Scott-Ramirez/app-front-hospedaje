@@ -53,6 +53,7 @@ export const EstanciasActivas = () => {
   };
 
   const totalVencidas = estancias.filter(e => {
+    if (e.tipo_estancia === 'cortesia') return false;
     const montoAcum = Number(e.montoAcumulado ?? 0);
     const pagado = Number(e.total_pagar || 0);
     return Boolean(e.estaVencida) && (montoAcum - pagado) > 0;
@@ -163,21 +164,24 @@ export const EstanciasActivas = () => {
               </thead>
               <tbody>
                 {estanciasPaginadas.map((estancia) => {
+                  const esCortesia = estancia.tipo_estancia === 'cortesia';
                   const montoAcum = Number(estancia.montoAcumulado ?? 0);
                   const pagado = Number(estancia.total_pagar || 0);
-                  const deuda = Math.max(0, montoAcum - pagado);
-                  const vencida = Boolean(estancia.estaVencida) && deuda > 0;
+                  const deuda = esCortesia ? 0 : Math.max(0, montoAcum - pagado);
+                  const vencida = !esCortesia && Boolean(estancia.estaVencida) && deuda > 0;
                   const dias = estancia.diasTranscurridos ?? 1;
 
                   return (
                     <tr
                       key={estancia.id}
-                      className={`border-b border-outline-variant/50 last:border-0 transition-colors hover:bg-surface-container/60 ${vencida ? 'bg-red-500/[0.04]' : ''}`}
+                      className={`border-b border-outline-variant/50 last:border-0 transition-colors hover:bg-surface-container/60 ${vencida ? 'bg-red-500/[0.04]' : esCortesia ? 'bg-purple-500/[0.03]' : ''}`}
                     >
                       {/* Habitación */}
                       <td className="px-5 py-3.5">
                         <span className="inline-flex items-center gap-1.5 font-bold text-primary text-sm">
-                          <span className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center text-xs font-black">
+                          <span className={`h-7 w-7 rounded-lg flex items-center justify-center text-xs font-black ${
+                            esCortesia ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300' : 'bg-primary/10'
+                          }`}>
                             {estancia.habitacion?.numero || '?'}
                           </span>
                         </span>
@@ -185,11 +189,18 @@ export const EstanciasActivas = () => {
 
                       {/* Huésped */}
                       <td className="px-5 py-3.5">
-                        <p className="font-semibold text-on-surface text-sm leading-tight">
-                          {estancia.huesped?.nombre || 'Anónimo'}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-on-surface text-sm leading-tight">
+                            {estancia.huesped?.nombre || 'Anónimo'}
+                          </p>
+                          {esCortesia && (
+                            <span className="text-[10px] bg-purple-500/15 text-purple-700 dark:text-purple-300 font-bold px-1.5 py-0.5 rounded">
+                              Cortesía
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[11px] text-on-surface-variant font-mono mt-0.5">
-                          {estancia.huesped?.dni || '---'}
+                          {estancia.huesped?.dni || '---'} {estancia.observaciones ? `· ${estancia.observaciones}` : ''}
                         </p>
                       </td>
 
@@ -210,7 +221,12 @@ export const EstanciasActivas = () => {
 
                       {/* Saldo */}
                       <td className="px-5 py-3.5 text-right">
-                        {deuda > 0 ? (
+                        {esCortesia ? (
+                          <div>
+                            <p className="text-sm font-bold text-purple-600 dark:text-purple-400">S/. 0.00</p>
+                            <p className="text-[10px] text-purple-500 font-medium">sin costo</p>
+                          </div>
+                        ) : deuda > 0 ? (
                           <div>
                             <p className="text-sm font-bold text-red-500">S/. {deuda.toFixed(2)}</p>
                             <p className="text-[10px] text-on-surface-variant">de S/. {montoAcum.toFixed(2)}</p>
@@ -225,7 +241,11 @@ export const EstanciasActivas = () => {
 
                       {/* Estado chip */}
                       <td className="px-5 py-3.5 text-center">
-                        {vencida ? (
+                        {esCortesia ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-purple-700 dark:text-purple-300 bg-purple-500/10 px-2 py-1 rounded-full border border-purple-500/20">
+                            ✨ Cortesía
+                          </span>
+                        ) : vencida ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-red-600 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20">
                             <AlertTriangle className="h-2.5 w-2.5" />
                             Vencida

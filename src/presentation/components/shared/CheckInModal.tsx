@@ -19,6 +19,8 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
     const [submitting, setSubmitting] = useState(false);
     const [noches, setNoches] = useState('1');
     const [reservasConfirmadas, setReservasConfirmadas] = useState<any[]>([]);
+    const [esCortesia, setEsCortesia] = useState(false);
+    const [motivoCortesia, setMotivoCortesia] = useState('');
 
     // Autocomplete
     const [buscandoHuesped, setBuscandoHuesped] = useState(false);
@@ -58,6 +60,8 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
             });
             setNoches('1');
             setCoincidencias([]);
+            setEsCortesia(false);
+            setMotivoCortesia('');
         }
     }, [isOpen]);
 
@@ -108,6 +112,16 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
 
     // Autocalcular el Total a Cobrar en base a la habitación y noches seleccionadas
     useEffect(() => {
+        if (esCortesia) {
+            setFormData(prev => ({
+                ...prev,
+                total_pagar: '0',
+                pago_inicial: '',
+                metodo_pago: ''
+            }));
+            return;
+        }
+
         if (formData.habitacionId && noches) {
             const habSelected = habitacionesDisponibles.find((h: any) => h.id === formData.habitacionId);
             if (habSelected) {
@@ -119,7 +133,7 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                 }));
             }
         }
-    }, [formData.habitacionId, noches]);
+    }, [formData.habitacionId, noches, esCortesia]);
 
     // Buscar huéspedes en tiempo real por DNI
     useEffect(() => {
@@ -199,10 +213,18 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
             return;
         }
 
-        const pagoInicialNum = formData.pago_inicial ? Number(formData.pago_inicial) : 0;
-        const totalPagarNum = Number(formData.total_pagar);
+        if (esCortesia) {
+            if (!motivoCortesia.trim()) {
+                AlertAdapter.error('Falta Información', 'Debe indicar el motivo o quién autoriza la estancia de cortesía (ej. Familiar del dueño).');
+                setSubmitting(false);
+                return;
+            }
+        }
 
-        if (pagoInicialNum > 0) {
+        const pagoInicialNum = (!esCortesia && formData.pago_inicial) ? Number(formData.pago_inicial) : 0;
+        const totalPagarNum = esCortesia ? 0 : Number(formData.total_pagar);
+
+        if (!esCortesia && pagoInicialNum > 0) {
             if (!formData.metodo_pago) {
                 AlertAdapter.error('Falta Información', 'El método de pago es obligatorio cuando se especifica un pago inicial.');
                 setSubmitting(false);
@@ -221,7 +243,9 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
         fechaSalida.setDate(fechaSalida.getDate() + totalNoches);
         fechaSalida.setHours(13, 0, 0, 0);
 
-        const precioNocheCalculado = totalNoches > 0 ? Number((totalPagarNum / totalNoches).toFixed(2)) : totalPagarNum;
+        const precioNocheCalculado = esCortesia
+            ? 0
+            : (totalNoches > 0 ? Number((totalPagarNum / totalNoches).toFixed(2)) : totalPagarNum);
 
         const payload: RegistroInicialDto = {
             nombre: formData.nombre.trim(),
@@ -233,6 +257,8 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
             pago_inicial: pagoInicialNum > 0 ? pagoInicialNum : undefined,
             metodo_pago: pagoInicialNum > 0 ? formData.metodo_pago : undefined,
             precio_noche: precioNocheCalculado,
+            tipo_estancia: esCortesia ? 'cortesia' : 'normal',
+            observaciones: esCortesia ? motivoCortesia.trim() : undefined,
         };
 
         const exito = await onConfirm(payload);
@@ -418,6 +444,42 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                             </div>
                         )}
 
+                        {/* OPCIÓN: ESTANCIA DE CORTESÍA / FAMILIAR DEL DUEÑO */}
+                        <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg space-y-2">
+                            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={esCortesia}
+                                    onChange={(e) => setEsCortesia(e.target.checked)}
+                                    className="mt-0.5 w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                                />
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-bold text-purple-700 dark:text-purple-300">
+                                        Cortesía / Familiar o Amigo del Dueño (Sin costo)
+                                    </span>
+                                    <span className="text-[11px] text-on-surface-variant leading-tight">
+                                        Ocupa el cuarto físicamente sin generar cobros ni alterar la caja del día.
+                                    </span>
+                                </div>
+                            </label>
+
+                            {esCortesia && (
+                                <div className="pt-1.5 animate-fade-in space-y-1">
+                                    <label className="text-[11px] font-semibold text-purple-700 dark:text-purple-300">
+                                        Motivo / Autorizado por <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required={esCortesia}
+                                        placeholder="Ej. Hermano del dueño Carlos / Autorizado por Don Luis"
+                                        className="w-full rounded-md border border-purple-500/30 bg-surface px-3 py-1.5 text-xs text-on-surface outline-none focus:ring-2 focus:ring-purple-500/40"
+                                        value={motivoCortesia}
+                                        onChange={(e) => setMotivoCortesia(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1">
                                 <label className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
@@ -439,58 +501,74 @@ export const CheckInModal = ({ isOpen, onClose, onConfirm }: CheckInModalProps) 
                                 <label className="text-xs font-medium text-on-surface-variant">Total a Cobrar (Soles)</label>
                                 <input
                                     type="number"
-                                    required
+                                    required={!esCortesia}
+                                    disabled={esCortesia}
                                     min="0"
                                     step="0.01"
                                     placeholder="0.00"
-                                    className="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                                    value={formData.total_pagar}
+                                    className={`rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all ${
+                                        esCortesia ? 'opacity-60 bg-surface-container cursor-not-allowed font-bold text-purple-600' : ''
+                                    }`}
+                                    value={esCortesia ? '0.00' : formData.total_pagar}
                                     onChange={(e) => setFormData({ ...formData, total_pagar: e.target.value })}
                                 />
-                                {formData.total_pagar && Number(formData.total_pagar) > 0 && (
-                                    <span className="text-[10px] text-primary font-semibold">
-                                        Tarifa pactada: S/. {(Number(formData.total_pagar) / (Number(noches) || 1)).toFixed(2)} / noche
+                                {esCortesia ? (
+                                    <span className="text-[10px] text-purple-600 font-bold">
+                                        ✨ Estancia liberada de cobro (S/. 0.00)
                                     </span>
+                                ) : (
+                                    formData.total_pagar && Number(formData.total_pagar) > 0 && (
+                                        <span className="text-[10px] text-primary font-semibold">
+                                            Tarifa pactada: S/. {(Number(formData.total_pagar) / (Number(noches) || 1)).toFixed(2)} / noche
+                                        </span>
+                                    )
                                 )}
                             </div>
                         </div>
 
                         {/* PAGO INICIAL Y METODO DE PAGO */}
-                        <div className="grid grid-cols-2 gap-4 pt-1">
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
-                                    <Coins className="h-3.5 w-3.5 text-primary" /> Pago Inicial (S/.)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    className="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                                    value={formData.pago_inicial}
-                                    onChange={(e) => setFormData({ ...formData, pago_inicial: e.target.value })}
-                                />
+                        {!esCortesia ? (
+                            <div className="grid grid-cols-2 gap-4 pt-1">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                                        <Coins className="h-3.5 w-3.5 text-primary" /> Pago Inicial (S/.)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        className="rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+                                        value={formData.pago_inicial}
+                                        onChange={(e) => setFormData({ ...formData, pago_inicial: e.target.value })}
+                                    />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
+                                        <Wallet className="h-3 w-3" /> Método de Pago
+                                    </label>
+                                    <select
+                                        required={formData.pago_inicial ? Number(formData.pago_inicial) > 0 : false}
+                                        className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
+                                        disabled={!formData.pago_inicial || Number(formData.pago_inicial) <= 0}
+                                        value={formData.metodo_pago}
+                                        onChange={(e) => setFormData({ ...formData, metodo_pago: e.target.value })}
+                                    >
+                                        <option value="" className="bg-surface text-on-surface">Seleccione método...</option>
+                                        <option value="efectivo" className="bg-surface text-on-surface">Efectivo</option>
+                                        <option value="yape" className="bg-surface text-on-surface">Yape</option>
+                                        <option value="plin" className="bg-surface text-on-surface">Plin</option>
+                                        <option value="tarjeta" className="bg-surface text-on-surface">Tarjeta</option>
+                                        <option value="transferencia" className="bg-surface text-on-surface">Transferencia</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="flex flex-col gap-1">
-                                <label className="text-xs font-medium text-on-surface-variant flex items-center gap-1">
-                                    <Wallet className="h-3 w-3" /> Método de Pago
-                                </label>
-                                <select
-                                    required={formData.pago_inicial ? Number(formData.pago_inicial) > 0 : false}
-                                    className="w-full rounded-md border border-outline-variant bg-surface-container-low px-3 py-2 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all cursor-pointer disabled:opacity-50"
-                                    disabled={!formData.pago_inicial || Number(formData.pago_inicial) <= 0}
-                                    value={formData.metodo_pago}
-                                    onChange={(e) => setFormData({ ...formData, metodo_pago: e.target.value })}
-                                >
-                                    <option value="" className="bg-surface text-on-surface">Seleccione método...</option>
-                                    <option value="efectivo" className="bg-surface text-on-surface">Efectivo</option>
-                                    <option value="yape" className="bg-surface text-on-surface">Yape</option>
-                                    <option value="plin" className="bg-surface text-on-surface">Plin</option>
-                                    <option value="tarjeta" className="bg-surface text-on-surface">Tarjeta</option>
-                                    <option value="transferencia" className="bg-surface text-on-surface">Transferencia</option>
-                                </select>
+                        ) : (
+                            <div className="p-2.5 bg-surface-container-low border border-outline-variant/40 rounded-lg text-xs text-on-surface-variant flex items-center gap-2">
+                                <Info className="h-4 w-4 text-purple-500 shrink-0" />
+                                <span>No se registrarán pagos ni deudas. La caja del turno se mantendrá intacta.</span>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Botones de acción */}

@@ -143,8 +143,20 @@ export const HistorialCheckoutsTab: React.FC<HistorialCheckoutsTabProps> = ({
                             {obtenerIniciales(item.huespedNombre)}
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-on-surface font-semibold leading-tight">{item.huespedNombre}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-on-surface font-semibold leading-tight">{item.huespedNombre}</span>
+                              {item.tipoEstancia === 'cortesia' && (
+                                <span className="px-1.5 py-0.5 text-[9px] font-black uppercase rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 tracking-wider">
+                                  Cortesía
+                                </span>
+                              )}
+                            </div>
                             <span className="text-[10px] text-on-surface-variant/80 font-medium tracking-wide mt-0.5">DNI: {item.huespedDni}</span>
+                            {item.observaciones && (
+                              <span className="text-[10px] text-primary/80 italic font-normal line-clamp-1 max-w-xs mt-0.5">
+                                📝 {item.observaciones}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -164,7 +176,11 @@ export const HistorialCheckoutsTab: React.FC<HistorialCheckoutsTabProps> = ({
                         S/. {item.habitacionPrecioBase ? item.habitacionPrecioBase.toFixed(2) : '0.00'}
                       </td>
                       <td className="py-3.5 px-6 text-right font-black text-on-surface text-base tracking-tight tabular-nums">
-                        S/. {item.montoTotalPagado.toFixed(2)}
+                        {item.tipoEstancia === 'cortesia' ? (
+                          <span className="text-purple-600 dark:text-purple-400 font-bold text-xs bg-purple-500/10 px-2 py-1 rounded">S/. 0.00 (Gratis)</span>
+                        ) : (
+                          `S/. ${item.montoTotalPagado.toFixed(2)}`
+                        )}
                       </td>
                     </tr>
                   );
