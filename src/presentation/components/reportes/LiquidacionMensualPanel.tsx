@@ -299,146 +299,167 @@ export const LiquidacionMensualPanel: React.FC = () => {
       <body>
         <table>
           <!-- ENCABEZADO -->
-          <tr><td colspan="7" class="title-banner">HOSPEDAJE RAYZA — LIQUIDACIÓN Y BALANCE MENSUAL</td></tr>
-          <tr><td colspan="7" class="subtitle">Período Contable: <b>${mesNombre.toUpperCase()} ${selectedYear}</b> | Generado: ${new Date().toLocaleString()}</td></tr>
-          <tr><td colspan="7"></td></tr>
+          <tr><td colspan="8" class="title-banner">HOSPEDAJE RAYZA — LIQUIDACIÓN Y BALANCE MENSUAL</td></tr>
+          <tr><td colspan="8" class="subtitle">Período Contable: <b>${mesNombre.toUpperCase()} ${selectedYear}</b> | Generado: ${new Date().toLocaleString()}</td></tr>
+          <tr><td colspan="8"></td></tr>
 
           <!-- 1. RESUMEN EJECUTIVO Y FONDOS -->
-          <tr><td colspan="7" class="sec-header">I. RESUMEN EJECUTIVO Y CONCILIACIÓN DE FONDOS</td></tr>
+          <tr><td colspan="8" class="sec-header">I. RESUMEN EJECUTIVO Y CONCILIACIÓN DE FONDOS</td></tr>
           <tr>
-            <td colspan="4" class="kpi-label">Total Ingresos por Estancias y Cobranzas:</td>
-            <td colspan="3" class="kpi-val-green">S/. ${totalIngresosSistema.toFixed(2)}</td>
+            <td colspan="5" class="kpi-label">Total Ingresos por Cobranzas Efectuadas en Caja (Sistema):</td>
+            <td colspan="3" class="kpi-val-green">S/. ${totalCobradoPagos.toFixed(2)}</td>
           </tr>
           ${ajusteInicial > 0 ? `
           <tr>
-            <td colspan="4" class="kpi-label">Ingresos Previos al Sistema (Ajuste Inicial de Mes):</td>
+            <td colspan="5" class="kpi-label">Ingresos Previos al Sistema (Ajuste Inicial de Mes):</td>
             <td colspan="3" class="kpi-val-green">S/. ${ajusteInicial.toFixed(2)}</td>
           </tr>` : ''}
           <tr style="background-color: #e2e8f0; font-weight: bold;">
-            <td colspan="4">TOTAL INGRESOS BRUTOS:</td>
-            <td colspan="3" class="num" style="color: #047857;">S/. ${totalIngresosBrutos.toFixed(2)}</td>
+            <td colspan="5">TOTAL INGRESOS BRUTOS DEL PERÍODO:</td>
+            <td colspan="3" class="num" style="color: #047857; font-size: 11pt;">S/. ${totalIngresosBrutos.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="4" class="kpi-label">💵 Recaudado en Efectivo Físico:</td>
+            <td colspan="5" class="kpi-label">💵 Recaudado en Efectivo Físico:</td>
             <td colspan="3" class="num" style="color: #15803d; font-weight: bold;">S/. ${totalEfectivo.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="4" class="kpi-label">📱 Recaudado por Canales Digitales (Yape / Plin / Transferencias / Tarjeta):</td>
+            <td colspan="5" class="kpi-label">📱 Recaudado por Canales Digitales (Yape / Plin / Transferencias / Tarjeta):</td>
             <td colspan="3" class="kpi-val-purple">S/. ${totalDigital.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="4" class="kpi-label">(-) Gastos Diarios de Turno (Caja Chica Recepción):</td>
+            <td colspan="5" class="kpi-label">(-) Gastos Diarios de Turno (Caja Chica Recepción):</td>
             <td colspan="3" class="kpi-val-red">S/. ${totalGastosCajaChica.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="4" class="kpi-label">(-) Gastos Administrativos de Fin de Mes (Personal, Luz, Agua, etc.):</td>
+            <td colspan="5" class="kpi-label">(-) Gastos Administrativos (Personal, Servicios Básicos y Mantenimiento):</td>
             <td colspan="3" class="kpi-val-red">S/. ${totalGastosAdministrativos.toFixed(2)}</td>
           </tr>
           <tr style="background-color: #fee2e2; font-weight: bold;">
-            <td colspan="4">TOTAL EGRESOS / GASTOS DEDUCIDOS:</td>
+            <td colspan="5">TOTAL EGRESOS / GASTOS DEDUCIDOS:</td>
             <td colspan="3" class="num" style="color: #b91c1c;">S/. ${totalGastosGenerales.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="4" class="net-banner">UTILIDAD / GANANCIA NETA LÍQUIDA PARA EL DUEÑO:</td>
+            <td colspan="5" class="net-banner">UTILIDAD / GANANCIA NETA LÍQUIDA PARA EL DUEÑO:</td>
             <td colspan="3" class="net-banner num">S/. ${gananciaNetaLiquida.toFixed(2)}</td>
           </tr>
-          <tr><td colspan="7"></td></tr>
+          <tr style="background-color: #f0fdf4;">
+            <td colspan="5" class="kpi-label" style="color: #166534;">💵 EFECTIVO FÍSICO NETO A ENTREGAR EN MANO (Efectivo - Caja Chica):</td>
+            <td colspan="3" class="num" style="color: #166534; font-weight: bold; font-size: 11pt;">S/. ${efectivoFisicoEnMano.toFixed(2)}</td>
+          </tr>
+          <tr><td colspan="8"></td></tr>
 
           <!-- 2. DESGLOSE DE COBRANZAS POR MÉTODO (YAPE, PLIN, EFECTIVO) -->
-          <tr><td colspan="7" class="sec-yape">II. DESGLOSE DE COBRANZAS POR MÉTODO DE PAGO</td></tr>
+          <tr><td colspan="8" class="sec-yape">II. DESGLOSE DE COBRANZAS POR MÉTODO DE PAGO</td></tr>
           <tr>
-            <td colspan="3" class="table-th">Método de Pago</td>
+            <td colspan="4" class="table-th">Método de Pago</td>
             <td colspan="2" class="table-th-center">N° Operaciones</td>
             <td colspan="2" class="table-th-right">Total Cobrado (S/.)</td>
           </tr>
           <tr>
-            <td colspan="3" class="badge-yape">📱 YAPE</td>
+            <td colspan="4" class="badge-yape">📱 YAPE</td>
             <td colspan="2" class="center">${metodosCobro['yape'].conteo}</td>
             <td colspan="2" class="num" style="color:#7e22ce; font-weight:bold;">S/. ${metodosCobro['yape'].total.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="3" class="badge-plin">📲 PLIN</td>
+            <td colspan="4" class="badge-plin">📲 PLIN</td>
             <td colspan="2" class="center">${metodosCobro['plin'].conteo}</td>
             <td colspan="2" class="num" style="color:#0284c7; font-weight:bold;">S/. ${metodosCobro['plin'].total.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="3" class="badge-efectivo">💵 EFECTIVO</td>
+            <td colspan="4" class="badge-efectivo">💵 EFECTIVO</td>
             <td colspan="2" class="center">${metodosCobro['efectivo'].conteo}</td>
             <td colspan="2" class="num" style="color:#15803d; font-weight:bold;">S/. ${metodosCobro['efectivo'].total.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="3" class="badge-transf">🏦 TRANSFERENCIA / BCP</td>
+            <td colspan="4" class="badge-transf">🏦 TRANSFERENCIA / BCP</td>
             <td colspan="2" class="center">${metodosCobro['transferencia'].conteo}</td>
             <td colspan="2" class="num" style="color:#1d4ed8; font-weight:bold;">S/. ${metodosCobro['transferencia'].total.toFixed(2)}</td>
           </tr>
           <tr>
-            <td colspan="3">💳 TARJETA</td>
+            <td colspan="4">💳 TARJETA</td>
             <td colspan="2" class="center">${metodosCobro['tarjeta'].conteo}</td>
             <td colspan="2" class="num" style="font-weight:bold;">S/. ${metodosCobro['tarjeta'].total.toFixed(2)}</td>
           </tr>
           <tr style="background-color:#f1f5f9; font-weight:bold;">
-            <td colspan="3">TOTAL COBRANZAS:</td>
-            <td colspan="2" class="center">${pagosMes.length}</td>
+            <td colspan="4">TOTAL COBRANZAS:</td>
+            <td colspan="2" class="center">${pagosMes.length} operaciones</td>
             <td colspan="2" class="num" style="color:#047857;">S/. ${totalCobradoPagos.toFixed(2)}</td>
           </tr>
-          <tr><td colspan="7"></td></tr>
+          <tr><td colspan="8"></td></tr>
 
-          <!-- 3. DETALLE DE PAGOS CON EVIDENCIAS -->
-          <tr><td colspan="7" class="sec-header">III. HISTORIAL DE PAGOS Y COBRANZAS (CON REGISTRO DE YAPE/EVIDENCIAS)</td></tr>
+          <!-- 3. DETALLE DE COBRANZAS E INGRESOS EN CAJA -->
+          <tr><td colspan="8" class="sec-header">III. DETALLE DE COBRANZAS E INGRESOS EN CAJA DEL PERÍODO (${pagosMes.length} COBROS)</td></tr>
           <tr>
             <td class="table-th-center">Fecha y Hora</td>
             <td class="table-th-center">Método</td>
             <td class="table-th">Huésped</td>
             <td class="table-th-center">Habitación</td>
-            <td class="table-th">Concepto</td>
-            <td class="table-th-center">Comprobante / Captura</td>
+            <td class="table-th">Concepto / Detalle</td>
+            <td class="table-th">Registrado Por</td>
+            <td class="table-th-center">Evidencia</td>
             <td class="table-th-right">Monto (S/.)</td>
           </tr>
     `;
 
     if (pagosMes.length === 0) {
-      html += `<tr><td colspan="7" class="center" style="color:#94a3b8;">No se registraron cobranzas en este mes</td></tr>`;
+      html += `<tr><td colspan="8" class="center" style="color:#94a3b8;">No se registraron cobranzas en este mes</td></tr>`;
     } else {
       pagosMes.forEach((p) => {
         const m = (p.metodoPago || 'efectivo').toUpperCase();
         const badgeClass = m === 'YAPE' ? 'badge-yape' : (m === 'PLIN' ? 'badge-plin' : (m === 'EFECTIVO' ? 'badge-efectivo' : 'badge-transf'));
         const tieneEvidencia = p.evidenciaUrl ? 'Adjunto (En Sistema)' : 'Sin captura';
+        const usuarioCajero = p.sesionCaja?.usuario?.nombre || 'Recepción';
 
         html += `
           <tr>
             <td class="center">${new Date(p.fecha).toLocaleString()}</td>
             <td class="${badgeClass}">${m}</td>
-            <td style="text-transform: capitalize;">${p.huesped?.nombre || 'Particular'}</td>
+            <td style="text-transform: capitalize;">${p.huesped?.nombre || 'Particular / Directo'}</td>
             <td class="center">Hab. ${p.estancia?.habitacion?.numero || 'S/N'}</td>
-            <td>${p.concepto || 'Abono'}</td>
+            <td>${p.concepto || 'Abono de Hospedaje'}</td>
+            <td>${usuarioCajero}</td>
             <td class="center" style="font-size: 9pt; color: ${p.evidenciaUrl ? '#047857' : '#94a3b8'};">${tieneEvidencia}</td>
-            <td class="num font-bold">S/. ${Number(p.monto).toFixed(2)}</td>
+            <td class="num font-bold" style="color: #047857;">S/. ${Number(p.monto).toFixed(2)}</td>
           </tr>
         `;
       });
       html += `
         <tr style="background-color:#f1f5f9; font-weight:bold;">
-          <td colspan="6" style="text-align:right;">Total Pagos Registrados:</td>
+          <td colspan="7" style="text-align:right;">Total Cobranzas Efectuadas en Recepción (${pagosMes.length} pagos):</td>
           <td class="num font-bold" style="color:#047857;">S/. ${totalCobradoPagos.toFixed(2)}</td>
+        </tr>
+      `;
+      if (ajusteInicial > 0) {
+        html += `
+        <tr style="background-color:#f8fafc; font-weight:bold;">
+          <td colspan="7" style="text-align:right; color:#475569;">(+) Ingresos Previos al Sistema (Ajuste Inicial del Mes):</td>
+          <td class="num font-bold" style="color:#047857;">S/. ${ajusteInicial.toFixed(2)}</td>
+        </tr>
+        `;
+      }
+      html += `
+        <tr style="background-color:#e6f4ea; font-weight:bold;">
+          <td colspan="7" style="text-align:right; color:#006b4d; font-size:11pt;">TOTAL GENERAL INGRESOS BRUTOS:</td>
+          <td class="num font-bold" style="color:#006b4d; font-size:11pt;">S/. ${totalIngresosBrutos.toFixed(2)}</td>
         </tr>
       `;
     }
 
     html += `
-          <tr><td colspan="7"></td></tr>
+          <tr><td colspan="8"></td></tr>
           <!-- 4. GASTOS ADMINISTRATIVOS -->
-          <tr><td colspan="7" class="sec-header">IV. DETALLE DE GASTOS ADMINISTRATIVOS (PERSONAL Y SERVICIOS)</td></tr>
+          <tr><td colspan="8" class="sec-header">IV. DETALLE DE GASTOS ADMINISTRATIVOS (PERSONAL, SERVICIOS Y FIJOS)</td></tr>
           <tr>
             <td class="table-th-center">Fecha</td>
             <td class="table-th-center">Categoría</td>
-            <td colspan="3" class="table-th">Descripción del Gasto</td>
+            <td colspan="4" class="table-th">Descripción del Gasto</td>
             <td class="table-th">Registrado Por</td>
             <td class="table-th-right">Monto (S/.)</td>
           </tr>
     `;
 
     if (gastosAdministrativos.length === 0) {
-      html += `<tr><td colspan="7" class="center" style="color:#94a3b8;">No se registraron gastos administrativos en este mes</td></tr>`;
+      html += `<tr><td colspan="8" class="center" style="color:#94a3b8;">No se registraron gastos administrativos en este mes</td></tr>`;
     } else {
       gastosAdministrativos.forEach((g) => {
         const cat = g.categoria === 'personal' ? 'Pago Personal' : (g.categoria === 'servicios' ? 'Servicios Básicos' : (g.categoria === 'mantenimiento' ? 'Mantenimiento' : 'Otros'));
@@ -446,7 +467,7 @@ export const LiquidacionMensualPanel: React.FC = () => {
           <tr>
             <td class="center">${new Date(g.fecha).toLocaleDateString()}</td>
             <td class="center">${cat}</td>
-            <td colspan="3">${g.concepto}</td>
+            <td colspan="4">${g.concepto}</td>
             <td>${g.usuario}</td>
             <td class="num" style="color:#b91c1c; font-weight:bold;">S/. ${Number(g.monto).toFixed(2)}</td>
           </tr>
@@ -454,47 +475,54 @@ export const LiquidacionMensualPanel: React.FC = () => {
       });
       html += `
         <tr style="background-color:#f1f5f9; font-weight:bold;">
-          <td colspan="6" style="text-align:right;">Total Gastos Administrativos:</td>
+          <td colspan="7" style="text-align:right;">Total Gastos Administrativos:</td>
           <td class="num font-bold" style="color:#b91c1c;">S/. ${totalGastosAdministrativos.toFixed(2)}</td>
         </tr>
       `;
     }
 
     html += `
-          <tr><td colspan="7"></td></tr>
-          <!-- 5. CHECK-OUTS HISTÓRICOS -->
-          <tr><td colspan="7" class="sec-header">V. HISTORIAL DE CLIENTES Y CHECK-OUTS CONCLUIDOS</td></tr>
+          <tr><td colspan="8"></td></tr>
+          <!-- 5. CHECK-OUTS HISTÓRICOS INFORMATIVOS -->
+          <tr><td colspan="8" class="sec-header">V. RESUMEN DE SALIDAS Y CHECK-OUTS CONCLUIDOS (INFORMATIVO DE OCUPACIÓN)</td></tr>
           <tr>
             <td class="table-th-center">Check-In</td>
             <td class="table-th-center">Check-Out</td>
             <td colspan="2" class="table-th">Huésped</td>
             <td class="table-th-center">DNI</td>
             <td class="table-th-center">Habitación</td>
-            <td class="table-th-right">Total Pagado (S/.)</td>
+            <td class="table-th">Observaciones</td>
+            <td class="table-th-right">Total Estancia (S/.)</td>
           </tr>
     `;
 
     if (checkOutsMes.length === 0) {
-      html += `<tr><td colspan="7" class="center" style="color:#94a3b8;">No hay check-outs registrados en este período</td></tr>`;
+      html += `<tr><td colspan="8" class="center" style="color:#94a3b8;">No hay check-outs registrados en este período</td></tr>`;
     } else {
       checkOutsMes.forEach((s) => {
         const esCort = s.tipoEstancia === 'cortesia';
-        const obsText = s.observaciones ? ` (${s.observaciones})` : '';
+        const obsText = s.observaciones || (esCort ? 'Cortesía de la casa' : 'Concluido');
         html += `
           <tr>
             <td class="center">${new Date(s.fechaEntrada).toLocaleDateString()}</td>
             <td class="center">${new Date(s.fechaSalida).toLocaleDateString()}</td>
-            <td colspan="2" style="text-transform: capitalize;">${s.huespedNombre}${esCort ? ' [CORTESÍA]' : ''}${obsText}</td>
+            <td colspan="2" style="text-transform: capitalize;">${s.huespedNombre}${esCort ? ' [CORTESÍA]' : ''}</td>
             <td class="center font-mono">${s.huespedDni}</td>
             <td class="center">Hab. ${s.habitacionNumero}</td>
+            <td style="font-size: 9pt; color: #64748b;">${obsText}</td>
             <td class="num font-bold">${esCort ? 'S/. 0.00' : `S/. ${Number(s.montoTotalPagado).toFixed(2)}`}</td>
           </tr>
         `;
       });
       html += `
         <tr style="background-color:#f1f5f9; font-weight:bold;">
-          <td colspan="6" style="text-align:right;">Total Recaudado en Check-Outs:</td>
+          <td colspan="7" style="text-align:right;">Total Valorizado de Check-Outs del Mes:</td>
           <td class="num font-bold" style="color:#047857;">S/. ${totalCobradoCheckouts.toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td colspan="8" style="font-size: 8.5pt; color: #64748b; font-style: italic; text-align: right;">
+            *(Nota: Los ingresos contables en caja corresponden a las cobranzas registradas en la Sección III)*
+          </td>
         </tr>
       `;
     }
@@ -566,6 +594,7 @@ export const LiquidacionMensualPanel: React.FC = () => {
           .b-plin { background: #e0f2fe; color: #0284c7; }
           .b-efectivo { background: #dcfce7; color: #15803d; }
           .b-transf { background: #dbeafe; color: #1d4ed8; }
+          .b-tarjeta { background: #fef3c7; color: #b45309; }
 
           .firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; page-break-inside: avoid; }
           .firma-box { border-top: 1px solid #334155; text-align: center; padding-top: 5px; }
@@ -645,8 +674,60 @@ export const LiquidacionMensualPanel: React.FC = () => {
           </tbody>
         </table>
 
-        <!-- SECCIÓN 2: HISTORIAL DE CLIENTES Y CHECK-OUTS -->
-        <h2>2. Historial de Estancias y Check-Outs del Período</h2>
+        <!-- SECCIÓN 2: DETALLE DE COBRANZAS E INGRESOS EN CAJA DEL MES -->
+        <h2>2. Detalle de Cobranzas e Ingresos en Caja del Período (${pagosMes.length} Cobros)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 85px;">Fecha y Hora</th>
+              <th class="text-center" style="width: 75px;">Método</th>
+              <th>Huésped</th>
+              <th class="text-center" style="width: 70px;">Habitación</th>
+              <th>Concepto / Detalle</th>
+              <th style="width: 85px;">Registrado Por</th>
+              <th class="text-right" style="width: 80px;">Monto Cobrado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${pagosMes.length === 0 ? '<tr><td colspan="7" class="text-center" style="color:#94a3b8;">Sin cobranzas registradas en este período</td></tr>' : pagosMes.map(p => {
+              const m = (p.metodoPago || 'efectivo').toLowerCase();
+              const badgeClass = m === 'yape' ? 'b-yape' : (m === 'plin' ? 'b-plin' : (m === 'efectivo' ? 'b-efectivo' : (m === 'tarjeta' ? 'b-tarjeta' : 'b-transf')));
+              const fechaStr = new Date(p.fecha).toLocaleString([], { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+              const usuarioCajero = p.sesionCaja?.usuario?.nombre || 'Recepción';
+              const habitacionStr = p.estancia?.habitacion?.numero ? `Hab. ${p.estancia.habitacion.numero}` : 'S/N';
+
+              return `
+              <tr>
+                <td class="text-center font-mono" style="font-size: 8.5px;">${fechaStr}</td>
+                <td class="text-center"><span class="badge-m ${badgeClass}">${m.toUpperCase()}</span></td>
+                <td style="text-transform: capitalize; font-weight: 600;">${p.huesped?.nombre || 'Particular / Directo'}</td>
+                <td class="text-center font-bold">${habitacionStr}</td>
+                <td style="color: #475569;">${p.concepto || 'Abono de Hospedaje'}</td>
+                <td style="font-size: 8.5px; color: #64748b;">${usuarioCajero}</td>
+                <td class="text-right font-bold" style="color:#006b4d;">S/. ${Number(p.monto).toFixed(2)}</td>
+              </tr>
+              `;
+            }).join('')}
+            <tr style="background: #f1f5f9;">
+              <td colspan="6" class="text-right font-bold">Total Cobranzas Efectuadas en Recepción (${pagosMes.length} pagos):</td>
+              <td class="text-right font-bold" style="color:#006b4d;">S/. ${totalCobradoPagos.toFixed(2)}</td>
+            </tr>
+            ${ajusteInicial > 0 ? `
+            <tr style="background: #f8fafc;">
+              <td colspan="6" class="text-right font-bold" style="color:#475569;">(+) Ingresos Previos al Sistema (Ajuste Inicial del Mes):</td>
+              <td class="text-right font-bold" style="color:#006b4d;">S/. ${ajusteInicial.toFixed(2)}</td>
+            </tr>
+            ` : ''}
+            <tr style="background: #e6f4ea;">
+              <td colspan="6" class="text-right font-bold" style="color:#006b4d; font-size: 10.5px;">TOTAL GENERAL INGRESOS BRUTOS:</td>
+              <td class="text-right font-bold" style="color:#006b4d; font-size: 11px;">S/. ${totalIngresosBrutos.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- SECCIÓN 3: HISTORIAL DE SALIDAS Y CHECK-OUTS CONCLUIDOS (INFORMATIVO) -->
+        ${checkOutsMes.length > 0 ? `
+        <h2>3. Resumen de Check-Outs y Salidas de Habitaciones del Período (Informativo)</h2>
         <table>
           <thead>
             <tr>
@@ -655,11 +736,11 @@ export const LiquidacionMensualPanel: React.FC = () => {
               <th>Huésped</th>
               <th class="text-center" style="width: 75px;">DNI</th>
               <th class="text-center" style="width: 75px;">Habitación</th>
-              <th class="text-right" style="width: 80px;">Monto Pagado</th>
+              <th class="text-right" style="width: 80px;">Total Estancia</th>
             </tr>
           </thead>
           <tbody>
-            ${checkOutsMes.length === 0 ? '<tr><td colspan="6" class="text-center" style="color:#94a3b8;">Sin check-outs registrados en el período</td></tr>' : checkOutsMes.map(s => {
+            ${checkOutsMes.map(s => {
               const esCort = s.tipoEstancia === 'cortesia';
               return `
               <tr>
@@ -680,19 +761,14 @@ export const LiquidacionMensualPanel: React.FC = () => {
               <td colspan="5" class="text-right font-bold">Subtotal por Check-Outs Concluidos:</td>
               <td class="text-right font-bold" style="color:#006b4d;">S/. ${totalCobradoCheckouts.toFixed(2)}</td>
             </tr>
-            ${totalCobradoPagos > totalCobradoCheckouts ? `
-            <tr style="background: #e6f4ea;">
-              <td colspan="5" class="text-right font-bold" style="color:#006b4d;">Total Recaudado en Recepción (Cobranzas del Mes):</td>
-              <td class="text-right font-bold" style="color:#006b4d;">S/. ${totalCobradoPagos.toFixed(2)}</td>
-            </tr>
-            <tr style="background: #f8fafc; font-size: 8.5px; color: #64748b;">
+            <tr style="background: #f8fafc; font-size: 8px; color: #64748b;">
               <td colspan="6" class="text-right">
-                * Nota: El total recaudado en caja y canales digitales (S/. ${totalCobradoPagos.toFixed(2)}) incluye anticipos y pagos de estancias en curso. El subtotal de check-outs concluidos corresponde a S/. ${totalCobradoCheckouts.toFixed(2)}.
+                * Nota Informativa: Esta sección resume las estancias concluidas en el período. El arqueo contable de caja y fondos del mes se rige por la tabla de cobranzas de la Sección 2.
               </td>
             </tr>
-            ` : ''}
           </tbody>
         </table>
+        ` : ''}
 
         <!-- FIRMAS -->
         <div class="firmas">
@@ -959,7 +1035,7 @@ export const LiquidacionMensualPanel: React.FC = () => {
             }`}
           >
             <CreditCard className="h-3.5 w-3.5" />
-            Cobranzas y Canales Digitales ({pagosMes.length})
+            Cobranzas e Ingresos en Caja ({pagosMes.length})
           </button>
           
           <button
